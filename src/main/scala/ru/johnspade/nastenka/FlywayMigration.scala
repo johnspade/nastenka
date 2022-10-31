@@ -1,4 +1,4 @@
-package ru.johnspade.taskobot
+package ru.johnspade.nastenka
 
 import org.flywaydb.core.Flyway
 import ru.johnspade.nastenka.DbConfig

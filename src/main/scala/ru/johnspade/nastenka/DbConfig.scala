@@ -1,8 +1,8 @@
 package ru.johnspade.nastenka
 
 import java.net.URI
-import zio.IO
 
+import zio.IO
 import zio.config.*, ConfigDescriptor.*, ConfigSource.*
 
 final case class DbConfig(driver: String, url: String, user: String, password: String)
@@ -20,3 +20,5 @@ object DbConfig:
           password = userInfo(1)
         )
       }
+
+  val live = ZConfig.fromSystemEnv(dbConfig).orDie

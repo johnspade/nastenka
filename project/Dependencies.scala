@@ -14,15 +14,15 @@ object Dependencies {
   }
 
   val distributionDependencies = Seq(
-    "dev.zio"       %% "zio"                   % V.zio,
-    "dev.zio"       %% "zio-config"            % V.zioConfig,
-    "io.d11"        %% "zhttp"                 % V.zioHttp,
-    "dev.zio"       %% "zio-json"              % V.zioJson,
-    "dev.zio"       %% "zio-logging-slf4j"     % V.zioLogging,
-    "ch.qos.logback" % "logback-classic"       % V.logback,
-    "org.flywaydb"   % "flyway-core"           % V.flyway,
-    "org.postgresql" % "postgresql"            % V.postgresql,
-    "io.getquill"   %% "quill-jasync-postgres" % V.zioQuill
+    "dev.zio"       %% "zio"               % V.zio,
+    "dev.zio"       %% "zio-config"        % V.zioConfig,
+    "io.d11"        %% "zhttp"             % V.zioHttp,
+    "dev.zio"       %% "zio-json"          % V.zioJson,
+    "dev.zio"       %% "zio-logging-slf4j" % V.zioLogging,
+    "ch.qos.logback" % "logback-classic"   % V.logback,
+    "org.flywaydb"   % "flyway-core"       % V.flyway,
+    "org.postgresql" % "postgresql"        % V.postgresql,
+    "io.getquill"   %% "quill-jdbc-zio"    % V.zioQuill
   )
 
   val testDependencies = Seq(

@@ -6,14 +6,16 @@ import zio.json.*
 
 import java.util.UUID
 
-class InvestigationRoutes:
+class InvestigationRoutes(investigationRepo: InvestigationRepository):
   val routes: Http[Any, Throwable, Request, Response] = Http.collectZIO[Request] {
     case Method.GET -> !! / "investigations" =>
-      ZIO.attempt(UUID.randomUUID()).map { id =>
-        val investigations = InvestigationList(List(InvestigationItem(id, "2022 Barcelona")))
-        Response.json(investigations.toJson)
-      }
+      investigationRepo.getInvestigations.orDie
+        .map(investigations => Response.json(InvestigationList(investigations).toJson))
   }
 
 object InvestigationRoutes:
-  val layer: ULayer[InvestigationRoutes] = ZLayer.succeed(new InvestigationRoutes)
+  val layer: ZLayer[InvestigationRepository, Nothing, InvestigationRoutes] =
+    ZLayer {
+      for investigationRepo <- ZIO.service[InvestigationRepository]
+      yield new InvestigationRoutes(investigationRepo)
+    }
