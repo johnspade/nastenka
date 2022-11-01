@@ -4,12 +4,14 @@ import zio.json.*
 
 import java.util.UUID
 
-final case class Investigation(id: UUID, title: String, pins: List[Pin])
+final case class Investigation(id: UUID, title: String)
+object Investigation:
+  given encoder: JsonEncoder[Investigation] = DeriveJsonEncoder.gen[Investigation]
 
-final case class InvestigationItem(id: UUID, title: String)
-object InvestigationItem:
-  given encoder: JsonEncoder[InvestigationItem] = DeriveJsonEncoder.gen[InvestigationItem]
+final case class InvestigationsResponse(investigations: List[Investigation])
+object InvestigationsResponse:
+  given encoder: JsonEncoder[InvestigationsResponse] = DeriveJsonEncoder.gen[InvestigationsResponse]
 
-final case class InvestigationList(investigations: List[InvestigationItem])
-object InvestigationList:
-  given encoder: JsonEncoder[InvestigationList] = DeriveJsonEncoder.gen[InvestigationList]
+final case class InvestigationFull(id: UUID, title: String, pins: List[Pin])
+object InvestigationFull:
+  given encoder: JsonEncoder[InvestigationFull] = DeriveJsonEncoder.gen[InvestigationFull]

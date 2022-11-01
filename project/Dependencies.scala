@@ -2,7 +2,7 @@ import sbt.librarymanagement.syntax._
 
 object Dependencies {
   object V {
-    val zio        = "2.0.1"
+    val zio        = "2.0.2"
     val zioConfig  = "3.0.2"
     val zioHttp    = "2.0.0-RC11"
     val zioJson    = "0.3.0"

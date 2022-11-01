@@ -22,7 +22,10 @@ object Main extends ZIOAppDefault:
         DataSourceLayer.fromConfig(typesafeConfig).orDie
       }
     }.flatten
-  private val postgresLive = Quill.Postgres.fromNamingStrategy(SnakeCase)
+  private val postgresLive =
+    Quill.Postgres.fromNamingStrategy(
+      CompositeNamingStrategy2[SnakeCase, PluralizedTableNames](SnakeCase, PluralizedTableNames)
+    )
 
   private val program =
     for
