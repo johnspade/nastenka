@@ -19,7 +19,7 @@ object Main extends ZIOAppDefault:
           "dataSourceClassName" -> "org.postgresql.ds.PGSimpleDataSource"
         )
         val typesafeConfig = ConfigFactory.parseMap(dbConfigMap.asJava)
-        DataSourceLayer.fromConfig(typesafeConfig).orDie
+        Quill.DataSource.fromConfig(typesafeConfig).orDie
       }
     }.flatten
   private val postgresLive =
@@ -40,5 +40,6 @@ object Main extends ZIOAppDefault:
       DbConfig.live,
       dataSourceLive,
       postgresLive,
-      InvestigationRepositoryLive.layer
+      InvestigationRepositoryLive.layer,
+      ApiInvestigationServiceLive.layer
     )

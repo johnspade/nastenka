@@ -8,6 +8,9 @@ lazy val root = project
     name         := "nastenka",
     version      := "0.1.0-SNAPSHOT",
     scalaVersion := scala3Version,
+    scalacOptions ++= Seq(
+      "-deprecation"
+    ),
     libraryDependencies ++= distributionDependencies ++ testDependencies.map(_ % Test),
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
     ThisBuild / dynverSeparator := "-",

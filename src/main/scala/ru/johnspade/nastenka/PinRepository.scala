@@ -7,13 +7,13 @@ import zio.*
 import java.sql.SQLException
 
 trait PinRepository:
-  def save(pin: Pin): ZIO[Any, SQLException, Unit]
+  def create(pin: Pin): ZIO[Any, SQLException, Pin]
 
 class PinRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2[SnakeCase, PluralizedTableNames]])
     extends PinRepository:
   import quill._
 
-  override def save(pin: Pin): ZIO[Any, SQLException, Unit] = run(query[Pin].insertValue(lift(pin))).as(())
+  override def create(pin: Pin): ZIO[Any, SQLException, Pin] = run(query[Pin].insertValue(lift(pin))).as(pin)
 
 object PinRepositoryLive:
   val layer = ZLayer.fromFunction(new PinRepositoryLive(_))

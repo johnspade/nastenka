@@ -6,22 +6,37 @@ import zio.json.*
 
 import java.util.UUID
 
-class InvestigationRoutes(investigationRepo: InvestigationRepository):
+class InvestigationRoutes(apiService: ApiInvestigationService):
   val routes: Http[Any, Throwable, Request, Response] = Http.collectZIO[Request] {
     case Method.GET -> !! / "investigations" =>
-      investigationRepo.getAll.orDie
+      apiService.getAll
         .map(investigations => Response.json(InvestigationsResponse(investigations).toJson))
 
     case Method.GET -> !! / "investigations" / id =>
-      investigationRepo
+      apiService
         .getFull(UUID.fromString(id))
-        .orDie
         .map(investigation => Response.json(investigation.toJson))
+
+    case req @ Method.POST -> !! / "investigations" =>
+      for
+        bodyAsString <- req.body.asString.orDie
+        newInvestigation <- ZIO
+          .fromEither(bodyAsString.fromJson[NewInvestigation])
+          .mapError(msg => new RuntimeException(msg)) // todo handle errors
+          .orDie
+        investigation <- apiService.create(newInvestigation)
+      yield Response.json(investigation.toJson)
+
+    case req @ Method.PUT -> !! / "investigations" =>
+      for
+        bodyAsString <- req.body.asString.orDie
+        investigation <- ZIO
+          .fromEither(bodyAsString.fromJson[Investigation])
+          .mapError(msg => new RuntimeException(msg)) // todo handle errors
+          .orDie
+        investigation <- apiService.save(investigation)
+      yield Response.json(investigation.toJson)
   }
 
 object InvestigationRoutes:
-  val layer: ZLayer[InvestigationRepository, Nothing, InvestigationRoutes] =
-    ZLayer {
-      for investigationRepo <- ZIO.service[InvestigationRepository]
-      yield new InvestigationRoutes(investigationRepo)
-    }
+  val layer = ZLayer.fromFunction(new InvestigationRoutes(_))
