@@ -1,16 +1,19 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.inbox
 
 import io.github.arainko.ducktape.*
 import zio.*
 
 import java.util.UUID
+import ru.johnspade.nastenka.Investigation
+import ru.johnspade.nastenka.NewPin
+import ru.johnspade.nastenka.Pin
 
-trait PublicInvestigationService:
+trait InboxService:
   def getInvestigations: ZIO[Any, Nothing, List[Investigation]]
 
   def addPin(investigationId: UUID, newPin: NewPin): ZIO[Any, Nothing, Unit]
 
-class PublicInvestigationServiceLive(investigationRepo: InvestigationRepository) extends PublicInvestigationService:
+class InboxServiceLive(investigationRepo: InvestigationRepository) extends InboxService:
   override def getInvestigations: ZIO[Any, Nothing, List[Investigation]] = investigationRepo.getAll.orDie
 
   override def addPin(investigationId: UUID, newPin: NewPin): ZIO[Any, Nothing, Unit] =
@@ -24,5 +27,5 @@ class PublicInvestigationServiceLive(investigationRepo: InvestigationRepository)
       _ <- investigationRepo.addPin(investigation, pin)
     yield ()).orDie
 
-object PublicInvestigationServiceLive:
-  val layer = ZLayer.fromFunction(new PublicInvestigationServiceLive(_))
+object InboxServiceLive:
+  val layer = ZLayer.fromFunction(new InboxServiceLive(_))

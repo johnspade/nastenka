@@ -1,4 +1,4 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.api
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill

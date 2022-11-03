@@ -1,4 +1,4 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.api
 
 import zhttp.http.*
 import zhttp.http.middleware.HttpMiddleware

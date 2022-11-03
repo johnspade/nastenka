@@ -1,10 +1,13 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.api
 
 import zhttp.http.*
 import zio.*
 import zio.json.*
 
 import java.util.UUID
+import ru.johnspade.nastenka.InvestigationsResponse
+import ru.johnspade.nastenka.NewInvestigation
+import ru.johnspade.nastenka.Investigation
 
 class InvestigationRoutes(apiService: ApiInvestigationService):
   val routes: Http[Any, Throwable, Request, Response] = Http.collectZIO[Request] {

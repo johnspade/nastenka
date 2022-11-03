@@ -1,7 +1,7 @@
 package ru.johnspade.nastenka
 
-import zio.json.JsonEncoder
-import zio.json.DeriveJsonEncoder
+import zio.json.*
+
 import java.util.UUID
 import java.time.Instant
 
@@ -16,7 +16,7 @@ final case class Pin(
 )
 
 object Pin:
-  given encoder: JsonEncoder[Pin] = DeriveJsonEncoder.gen[Pin]
+  given jsonCodec: JsonCodec[Pin] = DeriveJsonCodec.gen[Pin]
 
 final case class NewPin(
     pinType: PinType,

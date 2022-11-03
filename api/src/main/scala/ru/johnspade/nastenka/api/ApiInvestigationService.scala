@@ -1,9 +1,12 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.api
 
 import zio.ZIO
 import java.util.UUID
 import io.github.arainko.ducktape.*
 import zio.ZLayer
+import ru.johnspade.nastenka.Investigation
+import ru.johnspade.nastenka.NewInvestigation
+import ru.johnspade.nastenka.InvestigationFull
 
 trait ApiInvestigationService:
   def getAll: ZIO[Any, Nothing, List[Investigation]]
@@ -30,8 +33,9 @@ class ApiInvestigationServiceLive(investigationRepo: InvestigationRepository) ex
       savedInvestigation <- investigationRepo.create(investigation)
     yield savedInvestigation).orDie
 
+  // todo validate pins order
   override def save(investigation: Investigation): ZIO[Any, Nothing, Investigation] =
-    investigationRepo.update(investigation).orDie // todo validation ?
+    investigationRepo.update(investigation).orDie
 
 object ApiInvestigationServiceLive:
   val layer = ZLayer.fromFunction(new ApiInvestigationServiceLive(_))

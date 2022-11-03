@@ -1,7 +1,6 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.api
 
 import org.flywaydb.core.Flyway
-import ru.johnspade.nastenka.DbConfig
 import zio.*
 
 object FlywayMigration:

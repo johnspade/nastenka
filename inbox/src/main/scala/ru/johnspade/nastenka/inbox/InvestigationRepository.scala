@@ -1,21 +1,21 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.inbox
 
-import io.getquill._
+import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.*
 
 import java.sql.SQLException
 import java.util.UUID
 import scala.collection.Factory
+import ru.johnspade.nastenka.Investigation
+import ru.johnspade.nastenka.Pin
+import ru.johnspade.nastenka.InvestigationPin
+import ru.johnspade.nastenka.PinType
 
 trait InvestigationRepository:
-  def create(investigation: Investigation): ZIO[Any, SQLException, Investigation]
-
   def getAll: ZIO[Any, SQLException, List[Investigation]]
 
   def get(id: UUID): ZIO[Any, SQLException, Investigation]
-
-  def getFull(id: UUID): ZIO[Any, SQLException, InvestigationFull]
 
   def update(investigation: Investigation): ZIO[Any, SQLException, Investigation]
 
@@ -23,7 +23,7 @@ trait InvestigationRepository:
 
 class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2[SnakeCase, PluralizedTableNames]])
     extends InvestigationRepository:
-  import quill._
+  import quill.*
 
   private given arrayUuidDecoder[Col <: Seq[UUID]](using bf: Factory[UUID, Col]): Decoder[Col] =
     arrayRawDecoder[UUID, Col]
@@ -31,8 +31,8 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
 
   private inline given SchemaMeta[InvestigationPin] = schemaMeta[InvestigationPin]("investigations_pins")
 
-  override def create(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
-    run(query[Investigation].insertValue(lift(investigation))).as(investigation)
+  private given MappedEncoding[PinType, String] = MappedEncoding[PinType, String](_.toString())
+  private given MappedEncoding[String, PinType] = MappedEncoding[String, PinType](s => PinType.valueOf(s))
 
   override def getAll: ZIO[Any, SQLException, List[Investigation]] = run(query[Investigation])
 
@@ -40,31 +40,6 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
     query[Investigation].filter(_.id == lift(id))
   )
     .map(_.head)
-
-  override def getFull(id: UUID): ZIO[Any, SQLException, InvestigationFull] =
-    run(
-      query[Investigation]
-        .filter(_.id == lift(id))
-        .join(query[InvestigationPin])
-        .on { case (investigation, investigationPin) =>
-          investigationPin.investigationId == investigation.id
-        }
-        .join(query[Pin])
-        .on { case ((_, investigationPin), pin) =>
-          pin.id == investigationPin.pinId
-        }
-    )
-      .map {
-        _.groupBy(_._1._1).map { case (investigation, investigationPinsList) =>
-          InvestigationFull(
-            investigation.id,
-            investigation.createdAt,
-            investigation.title,
-            investigationPinsList.map(_._2),
-            investigation.pinsOrder
-          )
-        }.head
-      }
 
   override def update(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
     run(query[Investigation].update(_.title -> lift(investigation.title), _.pinsOrder -> lift(investigation.pinsOrder)))

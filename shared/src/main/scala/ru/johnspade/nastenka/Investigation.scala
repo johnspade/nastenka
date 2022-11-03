@@ -15,7 +15,7 @@ object InvestigationsResponse:
 
 final case class InvestigationFull(id: UUID, createdAt: Instant, title: String, pins: List[Pin], pinsOrder: List[UUID])
 object InvestigationFull:
-  given encoder: JsonEncoder[InvestigationFull] = DeriveJsonEncoder.gen[InvestigationFull]
+  given jsonCodec: JsonCodec[InvestigationFull] = DeriveJsonCodec.gen
 
 final case class NewInvestigation(title: String)
 object NewInvestigation:
