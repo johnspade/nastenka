@@ -96,5 +96,6 @@ lazy val backend = project
   .settings(
     dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
     dockerExposedPorts ++= Seq(8080),
-    dockerAliases += dockerAlias.value.withTag(Option("latest"))
+    dockerAliases += dockerAlias.value.withTag(Option("latest")),
+    packageName := "nastenka-backend"
   )

@@ -42,9 +42,12 @@ object Main extends ZIOAppDefault:
   private val program =
     for
       _         <- FlywayMigration.migrate
-      _         <- ZIO.serviceWithZIO[NastenkaServer](_.start)
       botConfig <- ZIO.service[BotConfig]
-      _         <- ZIO.serviceWithZIO[TelegramBot](_.start(botConfig.port, "0.0.0.0").useForever)
+      _ <- ZIO
+        .serviceWithZIO[NastenkaServer](_.start)
+        .zipPar {
+          ZIO.serviceWithZIO[TelegramBot](_.start(botConfig.port, "0.0.0.0").useForever)
+        }
     yield ()
 
   def run: Task[Unit] =

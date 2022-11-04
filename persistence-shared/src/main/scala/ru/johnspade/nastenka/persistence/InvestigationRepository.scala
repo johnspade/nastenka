@@ -42,7 +42,11 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
     .map(_.head)
 
   override def update(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
-    run(query[Investigation].update(_.title -> lift(investigation.title), _.pinsOrder -> lift(investigation.pinsOrder)))
+    run(
+      query[Investigation]
+        .filter(_.id == lift(investigation.id))
+        .update(_.title -> lift(investigation.title), _.pinsOrder -> lift(investigation.pinsOrder))
+    )
       .as(investigation)
 
   override def addPin(investigation: Investigation, pin: Pin): ZIO[Any, Throwable, Unit] =
