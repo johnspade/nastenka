@@ -7,13 +7,14 @@ import zio.*
 import java.sql.SQLException
 import java.util.UUID
 import scala.collection.Factory
-import ru.johnspade.nastenka.Investigation
-import ru.johnspade.nastenka.InvestigationPin
-import ru.johnspade.nastenka.Pin
-import ru.johnspade.nastenka.InvestigationFull
-import ru.johnspade.nastenka.PinType
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.InvestigationPin
+import ru.johnspade.nastenka.models.Pin
+import ru.johnspade.nastenka.models.InvestigationFull
+import ru.johnspade.nastenka.models.PinType
+import ru.johnspade.nastenka.persistence.InvestigationRepository
 
-trait InvestigationRepository:
+trait ApiInvestigationRepository:
   def create(investigation: Investigation): ZIO[Any, SQLException, Investigation]
 
   def getAll: ZIO[Any, SQLException, List[Investigation]]
@@ -26,8 +27,10 @@ trait InvestigationRepository:
 
   def addPin(investigation: Investigation, pin: Pin): ZIO[Any, Throwable, Unit]
 
-class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2[SnakeCase, PluralizedTableNames]])
-    extends InvestigationRepository:
+class ApiInvestigationRepositoryLive(
+    investigationRepo: InvestigationRepository,
+    quill: Quill.Postgres[CompositeNamingStrategy2[SnakeCase, PluralizedTableNames]]
+) extends ApiInvestigationRepository:
   import quill._
 
   private given arrayUuidDecoder[Col <: Seq[UUID]](using bf: Factory[UUID, Col]): Decoder[Col] =
@@ -42,12 +45,9 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
   override def create(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
     run(query[Investigation].insertValue(lift(investigation))).as(investigation)
 
-  override def getAll: ZIO[Any, SQLException, List[Investigation]] = run(query[Investigation])
+  override def getAll: ZIO[Any, SQLException, List[Investigation]] = investigationRepo.getAll
 
-  override def get(id: UUID): ZIO[Any, SQLException, Investigation] = run(
-    query[Investigation].filter(_.id == lift(id))
-  )
-    .map(_.head)
+  override def get(id: UUID): ZIO[Any, SQLException, Investigation] = investigationRepo.get(id)
 
   override def getFull(id: UUID): ZIO[Any, SQLException, InvestigationFull] =
     run(
@@ -75,16 +75,11 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
       }
 
   override def update(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
-    run(query[Investigation].update(_.title -> lift(investigation.title), _.pinsOrder -> lift(investigation.pinsOrder)))
-      .as(investigation)
+    investigationRepo.update(investigation)
 
   override def addPin(investigation: Investigation, pin: Pin): ZIO[Any, Throwable, Unit] =
-    val savePin = run(query[Pin].insertValue(lift(pin)))
-    val saveInvestigationPin = run(
-      query[InvestigationPin].insertValue(lift(InvestigationPin(investigation.id, pin.id)))
-    )
-    val saveInvestigation = update(investigation)
-    transaction(savePin *> saveInvestigationPin *> saveInvestigation).as(())
+    investigationRepo.addPin(investigation, pin)
+end ApiInvestigationRepositoryLive
 
-object InvestigationRepositoryLive:
-  val layer = ZLayer.fromFunction(new InvestigationRepositoryLive(_))
+object ApiInvestigationRepositoryLive:
+  val layer = ZLayer.fromFunction(new ApiInvestigationRepositoryLive(_, _))

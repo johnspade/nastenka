@@ -1,4 +1,4 @@
-package ru.johnspade.nastenka.inbox
+package ru.johnspade.nastenka.persistence
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill
@@ -7,10 +7,10 @@ import zio.*
 import java.sql.SQLException
 import java.util.UUID
 import scala.collection.Factory
-import ru.johnspade.nastenka.Investigation
-import ru.johnspade.nastenka.Pin
-import ru.johnspade.nastenka.InvestigationPin
-import ru.johnspade.nastenka.PinType
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.Pin
+import ru.johnspade.nastenka.models.InvestigationPin
+import ru.johnspade.nastenka.models.PinType
 
 trait InvestigationRepository:
   def getAll: ZIO[Any, SQLException, List[Investigation]]

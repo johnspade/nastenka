@@ -4,9 +4,10 @@ import io.github.arainko.ducktape.*
 import zio.*
 
 import java.util.UUID
-import ru.johnspade.nastenka.Investigation
-import ru.johnspade.nastenka.NewPin
-import ru.johnspade.nastenka.Pin
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.NewPin
+import ru.johnspade.nastenka.models.Pin
+import ru.johnspade.nastenka.persistence.InvestigationRepository
 
 trait InboxService:
   def getInvestigations: ZIO[Any, Nothing, List[Investigation]]

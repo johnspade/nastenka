@@ -19,7 +19,7 @@ val sharedSettings = Seq(
 lazy val root = project
   .in(file("."))
   .settings(name := "nastenka")
-  .aggregate(shared, api, inbox, telegram, backend)
+  .aggregate(shared, persistenceShared, api, inbox, telegram, backend)
 
 lazy val shared = project
   .in(file("shared"))
@@ -29,9 +29,20 @@ lazy val shared = project
     )
   )
 
+lazy val persistenceShared = project
+  .in(file("persistence-shared"))
+  .dependsOn(shared)
+  .settings(
+    libraryDependencies ++= Seq(
+      zio,
+      quill,
+      postgresql
+    )
+  )
+
 lazy val api = project
   .in(file("api"))
-  .dependsOn(shared)
+  .dependsOn(shared, persistenceShared)
   .settings(sharedSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -52,7 +63,7 @@ lazy val api = project
 
 lazy val inbox = project
   .in(file("inbox"))
-  .dependsOn(shared)
+  .dependsOn(shared, persistenceShared)
   .settings(sharedSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -79,7 +90,7 @@ lazy val telegram = project
 
 lazy val backend = project
   .in(file("backend"))
-  .dependsOn(api, telegram)
+  .dependsOn(api, telegram, persistenceShared)
   .settings(sharedSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin, AshScriptPlugin)
   .settings(

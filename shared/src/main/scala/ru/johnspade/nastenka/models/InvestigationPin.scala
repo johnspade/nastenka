@@ -1,4 +1,4 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.models
 
 import java.util.UUID
 

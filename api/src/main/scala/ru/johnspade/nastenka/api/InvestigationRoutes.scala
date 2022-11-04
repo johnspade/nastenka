@@ -5,9 +5,9 @@ import zio.*
 import zio.json.*
 
 import java.util.UUID
-import ru.johnspade.nastenka.InvestigationsResponse
-import ru.johnspade.nastenka.NewInvestigation
-import ru.johnspade.nastenka.Investigation
+import ru.johnspade.nastenka.models.InvestigationsResponse
+import ru.johnspade.nastenka.models.NewInvestigation
+import ru.johnspade.nastenka.models.Investigation
 
 class InvestigationRoutes(apiService: ApiInvestigationService):
   val routes: Http[Any, Throwable, Request, Response] = Http.collectZIO[Request] {

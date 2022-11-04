@@ -1,4 +1,4 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.models
 
 import zio.json.*
 
@@ -20,8 +20,8 @@ object Pin:
 
 final case class NewPin(
     pinType: PinType,
-    title: Option[String],
-    text: Option[String],
-    sender: Option[String],
-    original: Option[String]
+    title: Option[String] = None,
+    text: Option[String] = None,
+    sender: Option[String] = None,
+    original: Option[String] = None
 )

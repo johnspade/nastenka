@@ -4,9 +4,9 @@ import zio.ZIO
 import java.util.UUID
 import io.github.arainko.ducktape.*
 import zio.ZLayer
-import ru.johnspade.nastenka.Investigation
-import ru.johnspade.nastenka.NewInvestigation
-import ru.johnspade.nastenka.InvestigationFull
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.NewInvestigation
+import ru.johnspade.nastenka.models.InvestigationFull
 
 trait ApiInvestigationService:
   def getAll: ZIO[Any, Nothing, List[Investigation]]
@@ -17,7 +17,7 @@ trait ApiInvestigationService:
 
   def save(investigation: Investigation): ZIO[Any, Nothing, Investigation]
 
-class ApiInvestigationServiceLive(investigationRepo: InvestigationRepository) extends ApiInvestigationService:
+class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository) extends ApiInvestigationService:
   override def getAll: ZIO[Any, Nothing, List[Investigation]] =
     investigationRepo.getAll.orDie
 
