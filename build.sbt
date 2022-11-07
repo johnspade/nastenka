@@ -7,7 +7,9 @@ ThisBuild / version         := "0.1.0-SNAPSHOT"
 ThisBuild / scalaVersion    := scala3Version
 ThisBuild / dynverSeparator := "-"
 
-val sharedSettings = Seq(
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
+val commonSettings = Seq(
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
@@ -19,11 +21,14 @@ val sharedSettings = Seq(
 lazy val root = project
   .in(file("."))
   .settings(name := "nastenka")
-  .aggregate(shared, persistenceShared, api, inbox, telegram, backend)
+  .aggregate(shared, persistenceShared, api, inbox, telegram, backend, frontend)
 
 lazy val shared = project
   .in(file("shared"))
+  .enablePlugins(ScalaJSPlugin)
   .settings(
+    scalaJSLinkerConfig ~= { _.withSourceMap(false) },
+    scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) },
     libraryDependencies ++= Seq(
       zioJson
     )
@@ -43,7 +48,7 @@ lazy val persistenceShared = project
 lazy val api = project
   .in(file("api"))
   .dependsOn(shared, persistenceShared)
-  .settings(sharedSettings)
+  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       zio,
@@ -64,7 +69,7 @@ lazy val api = project
 lazy val inbox = project
   .in(file("inbox"))
   .dependsOn(shared, persistenceShared)
-  .settings(sharedSettings)
+  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       zio,
@@ -77,7 +82,7 @@ lazy val inbox = project
 lazy val telegram = project
   .in(file("sources/telegram"))
   .dependsOn(inbox)
-  .settings(sharedSettings)
+  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       zio,
@@ -91,11 +96,30 @@ lazy val telegram = project
 lazy val backend = project
   .in(file("backend"))
   .dependsOn(api, telegram, persistenceShared)
-  .settings(sharedSettings)
+  .settings(commonSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin, AshScriptPlugin)
   .settings(
+    name            := "nastenka-backend",
     dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
     dockerExposedPorts ++= Seq(8080),
     dockerAliases += dockerAlias.value.withTag(Option("latest")),
     packageName := "nastenka-backend"
+  )
+
+lazy val frontend = project
+  .in(file("frontend"))
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(shared)
+  .settings(commonSettings)
+  .settings(
+    name := "nastenka-frontend",
+    scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) },
+    scalaJSUseMainModuleInitializer := true,
+    scalaJSLinkerConfig ~= { _.withSourceMap(false) },
+    libraryDependencies ++= Seq(
+      "com.raquo"                     %%% "laminar"  % V.laminar,
+      "com.raquo"                     %%% "waypoint" % V.waypoint,
+      "dev.zio"                       %%% "zio-json" % V.zioJson,
+      "com.softwaremill.sttp.client3" %%% "core"     % V.sttpClient
+    )
   )

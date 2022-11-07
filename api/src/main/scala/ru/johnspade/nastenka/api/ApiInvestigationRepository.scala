@@ -1,18 +1,19 @@
 package ru.johnspade.nastenka.api
 
-import io.getquill._
+import io.getquill.*
 import io.getquill.jdbczio.Quill
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.InvestigationFull
+import ru.johnspade.nastenka.models.InvestigationPin
+import ru.johnspade.nastenka.models.Pin
+import ru.johnspade.nastenka.models.PinType
+import ru.johnspade.nastenka.persistence.InvestigationRepository
+import ru.johnspade.nastenka.persistence.codecs.given
 import zio.*
 
 import java.sql.SQLException
 import java.util.UUID
 import scala.collection.Factory
-import ru.johnspade.nastenka.models.Investigation
-import ru.johnspade.nastenka.models.InvestigationPin
-import ru.johnspade.nastenka.models.Pin
-import ru.johnspade.nastenka.models.InvestigationFull
-import ru.johnspade.nastenka.models.PinType
-import ru.johnspade.nastenka.persistence.InvestigationRepository
 
 trait ApiInvestigationRepository:
   def create(investigation: Investigation): ZIO[Any, SQLException, Investigation]
@@ -36,11 +37,6 @@ class ApiInvestigationRepositoryLive(
   private given arrayUuidDecoder[Col <: Seq[UUID]](using bf: Factory[UUID, Col]): Decoder[Col] =
     arrayRawDecoder[UUID, Col]
   private given arrayUuidEncoder[Col <: Seq[UUID]]: Encoder[Col] = arrayRawEncoder[UUID, Col]("uuid")
-
-  private inline given SchemaMeta[InvestigationPin] = schemaMeta[InvestigationPin]("investigations_pins")
-
-  private given MappedEncoding[PinType, String] = MappedEncoding[PinType, String](_.toString())
-  private given MappedEncoding[String, PinType] = MappedEncoding[String, PinType](s => PinType.valueOf(s))
 
   override def create(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
     run(query[Investigation].insertValue(lift(investigation))).as(investigation)

@@ -14,6 +14,9 @@ object Dependencies {
     val postgresql  = "42.3.1"
     val ducktape    = "0.1.0-RC2"
     val telegramium = "7.62.1"
+    val laminar     = "0.14.5"
+    val waypoint    = "0.5.0"
+    val sttpClient  = "3.8.3"
   }
 
   val zio             = "dev.zio"               %% "zio"               % V.zio

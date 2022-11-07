@@ -2,15 +2,17 @@ package ru.johnspade.nastenka.persistence
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.InvestigationPin
+import ru.johnspade.nastenka.models.Pin
+import ru.johnspade.nastenka.models.PinType
 import zio.*
 
 import java.sql.SQLException
 import java.util.UUID
 import scala.collection.Factory
-import ru.johnspade.nastenka.models.Investigation
-import ru.johnspade.nastenka.models.Pin
-import ru.johnspade.nastenka.models.InvestigationPin
-import ru.johnspade.nastenka.models.PinType
+
+import codecs.given
 
 trait InvestigationRepository:
   def getAll: ZIO[Any, SQLException, List[Investigation]]
@@ -28,11 +30,6 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
   private given arrayUuidDecoder[Col <: Seq[UUID]](using bf: Factory[UUID, Col]): Decoder[Col] =
     arrayRawDecoder[UUID, Col]
   private given arrayUuidEncoder[Col <: Seq[UUID]]: Encoder[Col] = arrayRawEncoder[UUID, Col]("uuid")
-
-  private inline given SchemaMeta[InvestigationPin] = schemaMeta[InvestigationPin]("investigations_pins")
-
-  private given MappedEncoding[PinType, String] = MappedEncoding[PinType, String](_.toString())
-  private given MappedEncoding[String, PinType] = MappedEncoding[String, PinType](s => PinType.valueOf(s))
 
   override def getAll: ZIO[Any, SQLException, List[Investigation]] = run(query[Investigation])
 
