@@ -1,15 +1,19 @@
 package ru.johnspade.nastenka
 
-import com.raquo.laminar.api.L.{Owner => _, *}
+import com.raquo.laminar.api.L.*
+import ru.johnspade.nastenka.views.*
+import com.raquo.waypoint.SplitRender
 
-object MainPage {
+object MainPage extends Component:
+  import Page.*
+
+  val splitter = SplitRender[Page, HtmlElement](Router.router.$currentPage)
+    .collectSignal[InvestigationPage] { $page => new InvestigationView($page).body }
+    .collectStatic(InvestigationsPage)(new InvestigationIndexView().body)
+    .collectStatic(InvestigationsPage)(new InvestigationIndexView().body)
+
   def body: Div =
     div(
-      cls("mx-auto max-w-2xl space-y-4 mt-6"),
-      child <-- Router.router.$currentPage.map {
-        case Page.InvestigationsPage => new InvestigationIndexView().body
-        case Page.HomePage           => new InvestigationIndexView().body
-        case _                       => ???
-      }
+      cls("mx-auto max-w-2xl mt-6"),
+      child <-- splitter.$view
     )
-}

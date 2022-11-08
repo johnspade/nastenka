@@ -49,13 +49,13 @@ class ApiInvestigationRepositoryLive(
     run(
       query[Investigation]
         .filter(_.id == lift(id))
-        .join(query[InvestigationPin])
+        .leftJoin(query[InvestigationPin])
         .on { case (investigation, investigationPin) =>
           investigationPin.investigationId == investigation.id
         }
-        .join(query[Pin])
-        .on { case ((_, investigationPin), pin) =>
-          pin.id == investigationPin.pinId
+        .leftJoin(query[Pin])
+        .on { case ((_, investigationPinOpt), pin) =>
+          investigationPinOpt.map(_.pinId).contains(pin.id)
         }
     )
       .map {
@@ -64,7 +64,7 @@ class ApiInvestigationRepositoryLive(
             investigation.id,
             investigation.createdAt,
             investigation.title,
-            investigationPinsList.map(_._2),
+            investigationPinsList.flatMap(_._2),
             investigation.pinsOrder
           )
         }.head

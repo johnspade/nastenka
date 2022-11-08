@@ -52,7 +52,7 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService)(using 
         forwardedMsg <- msg.replyToMessage
         senderName = forwardedMsg.forwardSenderName
           .orElse {
-            msg.forwardFrom
+            forwardedMsg.forwardFrom
               .map(u => u.firstName + u.lastName.map(" " + _).getOrElse(""))
           }
         text <- forwardedMsg.text

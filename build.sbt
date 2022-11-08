@@ -3,7 +3,6 @@ import Dependencies._
 val scala3Version = "3.2.0"
 
 ThisBuild / organization    := "ru.johnspade"
-ThisBuild / version         := "0.1.0-SNAPSHOT"
 ThisBuild / scalaVersion    := scala3Version
 ThisBuild / dynverSeparator := "-"
 
@@ -103,7 +102,7 @@ lazy val backend = project
     dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
     dockerExposedPorts ++= Seq(8080),
     dockerAliases += dockerAlias.value.withTag(Option("latest")),
-    packageName := "nastenka-backend"
+    Docker / packageName := "nastenka"
   )
 
 lazy val frontend = project

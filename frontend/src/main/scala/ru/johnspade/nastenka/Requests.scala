@@ -6,6 +6,9 @@ import zio.json.*
 
 import scala.concurrent.Future
 import ru.johnspade.nastenka.models.InvestigationsResponse
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.InvestigationFull
+import java.util.UUID
 
 object Requests:
   private val backend: SttpBackend[Future, Any] = FetchBackend()
@@ -22,6 +25,10 @@ object Requests:
     }
   }
 
-  def getAllInvestigations: EventStream[InvestigationsResponse] = getRequest[InvestigationsResponse]("investigations")
+  def getAllInvestigations: EventStream[List[Investigation]] =
+    getRequest[InvestigationsResponse]("investigations").map(_.investigations)
+
+  def getInvestigationFull(id: UUID): EventStream[InvestigationFull] =
+    getRequest[InvestigationFull]("investigations", id)
 
 end Requests
