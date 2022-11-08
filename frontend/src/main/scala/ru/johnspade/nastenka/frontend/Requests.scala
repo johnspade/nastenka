@@ -1,4 +1,4 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.frontend
 
 import com.raquo.laminar.api.L.*
 import sttp.client3.*

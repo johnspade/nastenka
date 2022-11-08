@@ -1,28 +1,19 @@
-package ru.johnspade.nastenka.views
-
-import ru.johnspade.nastenka.Component
-import com.raquo.airstream.eventbus.EventBus
+package ru.johnspade.nastenka.frontend.views
 
 import com.raquo.laminar.api.L.*
+import ru.johnspade.nastenka.frontend.Component
+import ru.johnspade.nastenka.frontend.Page
+import ru.johnspade.nastenka.frontend.Requests
+import ru.johnspade.nastenka.frontend.Router
 import ru.johnspade.nastenka.models.InvestigationFull
+
 import java.util.UUID
-import ru.johnspade.nastenka.Requests
-import ru.johnspade.nastenka.Router
-import ru.johnspade.nastenka.Page
 
 final class InvestigationView($investigationPage: Signal[Page.InvestigationPage]) extends Component:
-  val reloadInvestigationBus = new EventBus[Unit]
-
-  val $investigation: EventStream[InvestigationFull] =
-    EventStream.merge(
-      $investigationPage.flatMap(page => Requests.getInvestigationFull(page.id)),
-      reloadInvestigationBus.events
-        .flatMap(_ => $investigationPage.flatMap(page => Requests.getInvestigationFull(page.id)))
-    )
+  private val $investigation: EventStream[InvestigationFull] =
+    $investigationPage.flatMap(page => Requests.getInvestigationFull(page.id))
 
   override def body: Div = div(
-    reloadInvestigationBus.events --> { _ => () },
-    onMountCallback(_ => reloadInvestigationBus.emit(())),
     div(
       cls("text-center sm:text-left"),
       a(

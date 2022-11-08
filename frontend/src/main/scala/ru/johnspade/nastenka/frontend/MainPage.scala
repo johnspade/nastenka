@@ -1,7 +1,7 @@
-package ru.johnspade.nastenka
+package ru.johnspade.nastenka.frontend
 
 import com.raquo.laminar.api.L.*
-import ru.johnspade.nastenka.views.*
+import ru.johnspade.nastenka.frontend.views.*
 import com.raquo.waypoint.SplitRender
 
 object MainPage extends Component:
