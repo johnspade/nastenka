@@ -20,7 +20,7 @@ val commonSettings = Seq(
 lazy val root = project
   .in(file("."))
   .settings(name := "nastenka")
-  .aggregate(shared, persistenceShared, api, inbox, telegram, backend, frontend)
+  .aggregate(shared, persistenceShared, api, inbox, telegram, email, backend, frontend)
 
 lazy val shared = project
   .in(file("shared"))
@@ -92,9 +92,25 @@ lazy val telegram = project
     )
   )
 
+lazy val email = project
+  .in(file("sources/email"))
+  .dependsOn(inbox)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      zio,
+      zioConfig,
+      zioNio,
+      zioInteropCats,
+      emilCommon,
+      emilJavamail,
+      cdtClient
+    )
+  )
+
 lazy val backend = project
   .in(file("backend"))
-  .dependsOn(api, telegram, persistenceShared)
+  .dependsOn(api, telegram, email, persistenceShared)
   .settings(commonSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin, AshScriptPlugin)
   .settings(

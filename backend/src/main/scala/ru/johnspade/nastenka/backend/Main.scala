@@ -10,6 +10,12 @@ import ru.johnspade.nastenka.api.DbConfig
 import ru.johnspade.nastenka.api.FlywayMigration
 import ru.johnspade.nastenka.api.InvestigationRoutes
 import ru.johnspade.nastenka.api.NastenkaServer
+import ru.johnspade.nastenka.email.ChromeServiceLive
+import ru.johnspade.nastenka.email.EmailConfig
+import ru.johnspade.nastenka.email.EmailService
+import ru.johnspade.nastenka.email.EmailServiceLive
+import ru.johnspade.nastenka.email.PrintServiceLive
+import ru.johnspade.nastenka.email.ProcessedEmailRepositoryLive
 import ru.johnspade.nastenka.inbox.InboxServiceLive
 import ru.johnspade.nastenka.persistence.InvestigationRepositoryLive
 import ru.johnspade.nastenka.telegram.BotConfig
@@ -17,6 +23,7 @@ import ru.johnspade.nastenka.telegram.TelegramBot
 import ru.johnspade.nastenka.telegram.TelegramBotApi
 import zio.*
 import zio.interop.catz.*
+import zio.stream.ZSink
 
 import scala.jdk.CollectionConverters.MapHasAsJava
 
@@ -48,6 +55,9 @@ object Main extends ZIOAppDefault:
         .zipPar {
           ZIO.serviceWithZIO[TelegramBot](_.start(botConfig.port, "0.0.0.0").useForever)
         }
+        .zipPar {
+          ZIO.serviceWithZIO[EmailService](_.createStream.run(ZSink.drain))
+        }
     yield ()
 
   def run: Task[Unit] =
@@ -63,5 +73,10 @@ object Main extends ZIOAppDefault:
       InboxServiceLive.layer,
       BotConfig.live,
       TelegramBotApi.live,
-      TelegramBot.live
+      TelegramBot.live,
+      ProcessedEmailRepositoryLive.layer,
+      ChromeServiceLive.layer,
+      PrintServiceLive.layer,
+      EmailConfig.live,
+      EmailServiceLive.layer
     )

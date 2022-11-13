@@ -23,9 +23,7 @@ class InboxServiceLive(investigationRepo: InvestigationRepository) extends Inbox
       now   <- clock.instant
       id    <- ZIO.attempt(UUID.randomUUID())
       pin = newPin.into[Pin].transform(Field.const(_.createdAt, now), Field.const(_.id, id)) // todo extract method
-      investigation <- investigationRepo.get(investigationId)
-      updatedInvestigation = investigation.copy(pinsOrder = investigation.pinsOrder :+ id)
-      _ <- investigationRepo.addPin(investigation, pin)
+      _ <- investigationRepo.addPin(investigationId, pin)
     yield ()).orDie
 
 object InboxServiceLive:

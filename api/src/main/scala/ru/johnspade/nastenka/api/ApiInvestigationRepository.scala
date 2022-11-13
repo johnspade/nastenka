@@ -26,7 +26,7 @@ trait ApiInvestigationRepository:
 
   def update(investigation: Investigation): ZIO[Any, SQLException, Investigation]
 
-  def addPin(investigation: Investigation, pin: Pin): ZIO[Any, Throwable, Unit]
+  def addPin(investigationId: UUID, pin: Pin): ZIO[Any, Throwable, Unit]
 
 class ApiInvestigationRepositoryLive(
     investigationRepo: InvestigationRepository,
@@ -73,8 +73,8 @@ class ApiInvestigationRepositoryLive(
   override def update(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
     investigationRepo.update(investigation)
 
-  override def addPin(investigation: Investigation, pin: Pin): ZIO[Any, Throwable, Unit] =
-    investigationRepo.addPin(investigation, pin)
+  override def addPin(investigationId: UUID, pin: Pin): ZIO[Any, Throwable, Unit] =
+    investigationRepo.addPin(investigationId, pin)
 end ApiInvestigationRepositoryLive
 
 object ApiInvestigationRepositoryLive:

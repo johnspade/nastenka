@@ -40,7 +40,7 @@ final class InvestigationView($investigationPage: Signal[Page.InvestigationPage]
               cls("shrink-0"),
               img(
                 cls("h-12 w-12"),
-                src("img/telegram_logo.svg")
+                src("/img/telegram_logo.svg")
               )
             ),
             p(

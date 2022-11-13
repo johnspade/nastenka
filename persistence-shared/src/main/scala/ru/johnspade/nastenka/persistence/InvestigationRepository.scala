@@ -21,7 +21,7 @@ trait InvestigationRepository:
 
   def update(investigation: Investigation): ZIO[Any, SQLException, Investigation]
 
-  def addPin(investigation: Investigation, pin: Pin): ZIO[Any, Throwable, Unit]
+  def addPin(investigationId: UUID, pin: Pin): ZIO[Any, Throwable, Unit]
 
 class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2[SnakeCase, PluralizedTableNames]])
     extends InvestigationRepository:
@@ -46,13 +46,26 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
     )
       .as(investigation)
 
-  override def addPin(investigation: Investigation, pin: Pin): ZIO[Any, Throwable, Unit] =
+  override def addPin(investigationId: UUID, pin: Pin): ZIO[Any, Throwable, Unit] =
     val savePin = run(query[Pin].insertValue(lift(pin)))
     val saveInvestigationPin = run(
-      query[InvestigationPin].insertValue(lift(InvestigationPin(investigation.id, pin.id)))
+      query[InvestigationPin].insertValue(lift(InvestigationPin(investigationId, pin.id)))
     )
-    val saveInvestigation = update(investigation)
-    transaction(savePin *> saveInvestigationPin *> saveInvestigation).as(())
+    transaction(
+      for
+        investigation <- run(quote(query[Investigation].filter(_.id == lift(investigationId)).forUpdate)).map(_.head)
+        updatedInvestigation = investigation.copy(pinsOrder = investigation.pinsOrder :+ pin.id)
+        _ <- savePin
+        _ <- saveInvestigationPin
+        _ <- update(updatedInvestigation)
+      yield ()
+    )
+
+  extension [T](q: Query[T]) {
+    inline def forUpdate = quote(sql"$q for update".as[Query[T]])
+  }
+
+end InvestigationRepositoryLive
 
 object InvestigationRepositoryLive:
   val layer = ZLayer.fromFunction(new InvestigationRepositoryLive(_))

@@ -10,18 +10,18 @@ services:
       - POSTGRES_DB=nastenka
     ports:
       - ${DB_PORT:-5432}:5432
-  backend:
-    image: nastenka-backend:latest
-    restart: always
-    depends_on: 
-      - db
-    ports:
-      - ${PORT:-8080}:8080
-      - ${BOT_PORT:-8081}:8081
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/nastenka
-      - PORT=8080
-      - BOT_PORT=8081
-      - BOT_EXTERNAL_URL
-      - BOT_USER_ID
-      - BOT_TOKEN
+  # backend:
+  #   image: nastenka-backend:latest
+  #   restart: always
+  #   depends_on: 
+  #     - db
+  #   ports:
+  #     - ${PORT:-8080}:8080
+  #     - ${BOT_PORT:-8081}:8081
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@db:5432/nastenka
+  #     - PORT=8080
+  #     - BOT_PORT=8081
+  #     - BOT_EXTERNAL_URL
+  #     - BOT_USER_ID
+  #     - BOT_TOKEN
