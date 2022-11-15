@@ -35,6 +35,7 @@ lazy val shared = project
 
 lazy val persistenceShared = project
   .in(file("persistence-shared"))
+  .settings(commonSettings)
   .dependsOn(shared)
   .settings(
     libraryDependencies ++= Seq(
@@ -72,6 +73,8 @@ lazy val inbox = project
   .settings(
     libraryDependencies ++= Seq(
       zio,
+      zioConfig,
+      zioS3,
       postgresql,
       quill,
       ducktape
@@ -104,13 +107,14 @@ lazy val email = project
       zioInteropCats,
       emilCommon,
       emilJavamail,
-      cdtClient
+      cdtClient,
+      logback
     )
   )
 
 lazy val backend = project
   .in(file("backend"))
-  .dependsOn(api, telegram, email, persistenceShared)
+  .dependsOn(api, inbox, telegram, email, persistenceShared)
   .settings(commonSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin, AshScriptPlugin)
   .settings(

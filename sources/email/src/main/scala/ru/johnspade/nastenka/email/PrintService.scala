@@ -8,16 +8,17 @@ import com.github.kklisura.cdt.services.ChromeDevToolsService
 import com.github.kklisura.cdt.services.ChromeService
 import zio.*
 import zio.nio.file.*
+import zio.stream.ZStream
 
 import java.util.Base64
 
 trait PrintService:
-  def print(html: String, outputFilename: String): ZIO[Any, Throwable, Unit]
+  def print(html: String): ZIO[Any, Throwable, ZStream[Any, Nothing, Byte]]
 
 final class PrintServiceLive(chromeService: ChromeService) extends PrintService:
 
-  override def print(html: String, outputFilename: String): ZIO[Any, Throwable, Unit] =
-    ZIO.scoped(for {
+  override def print(html: String): ZIO[Any, Throwable, ZStream[Any, Nothing, Byte]] =
+    ZIO.scoped(for
       tempFilePath    <- createTempHtmlFile(html)
       devToolsService <- createDevToolsService
       page            <- createPage(devToolsService)
@@ -30,8 +31,8 @@ final class PrintServiceLive(chromeService: ChromeService) extends PrintService:
       }
       _          <- p.await
       printToPdf <- printToPdfA4(devToolsService)
-      _          <- dump(outputFilename, printToPdf)
-    } yield ())
+      stream     <- dump(printToPdf)
+    yield stream)
 
   private def createTempHtmlFile(html: String) =
     for
@@ -39,14 +40,12 @@ final class PrintServiceLive(chromeService: ChromeService) extends PrintService:
       _    <- Files.writeLines(file, List(html))
     yield file
 
-  private def dump(filename: String, printToPdf: PrintToPDF) =
-    val path = Path(filename)
+  private def dump(printToPdf: PrintToPDF) =
     for
-      out   <- Files.createFile(Path(filename))
       data  <- ZIO.attemptBlocking(printToPdf.getData)
       bytes <- ZIO.attempt(Base64.getDecoder().decode(data))
-      _     <- Files.writeBytes(path, Chunk.fromArray(bytes))
-    yield ()
+      stream = ZStream.fromIterable(bytes)
+    yield stream
 
   private val createDevToolsService =
     for

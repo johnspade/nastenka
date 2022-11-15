@@ -8,20 +8,19 @@ import emil.*
 import emil.builder.*
 import emil.javamail.*
 import ru.johnspade.nastenka.inbox.InboxService
+import ru.johnspade.nastenka.models.NewPin
+import ru.johnspade.nastenka.models.PinType
 import zio.*
 import zio.interop.catz.*
 import zio.interop.catz.implicits.*
+import zio.stream.ZSink
 import zio.stream.ZStream
 
 import java.util.UUID
 import scala.util.Try
 
-import zio.stream.ZSink
-import ru.johnspade.nastenka.models.NewPin
-import ru.johnspade.nastenka.models.PinType
-
 trait EmailService:
-  def createStream: ZStream[Any, Throwable, Unit]
+  def createStream: ZStream[Any, Throwable, Any]
 
 final class EmailServiceLive(
     emailConfig: EmailConfig,
@@ -30,7 +29,7 @@ final class EmailServiceLive(
     printService: PrintService
 ) extends EmailService:
 
-  override def createStream: ZStream[Any, Throwable, Unit] =
+  override def createStream: ZStream[Any, Throwable, Any] =
     val emil    = JavaMailEmil[Task]()
     val runEmil = emil(emailConfig.imapConfig)
     val a       = emil.access
@@ -50,7 +49,7 @@ final class EmailServiceLive(
       }
 
     ZStream
-      .fromSchedule(Schedule.spaced(1.minute))
+      .fromSchedule(Schedule.once andThen Schedule.spaced(1.minute))
       .mapZIO { _ =>
         for
           processed <- processedEmailRepo.getAll
@@ -70,25 +69,26 @@ final class EmailServiceLive(
       }
       .flattenIterables
       .schedule(Schedule.once andThen Schedule.spaced(5.seconds))
-      .mapZIO { mail =>
+      .tap { mail =>
         for
-          htmlPart <- mail.body.htmlPart
-          html     <- ZIO.fromEither(htmlPart.get.contentDecode)
-          uuid     <- ZIO.attemptBlocking(UUID.randomUUID())
-          fileLink = uuid.toString
-          _ <- printService.print(html, s"$uuid.pdf")
+          htmlPart  <- mail.body.htmlPart
+          html      <- ZIO.fromEither(htmlPart.get.contentDecode)
+          uuid      <- ZIO.attempt(UUID.randomUUID())
+          pdfStream <- printService.print(html)
+          _         <- inboxService.saveFile(key = s"$uuid.pdf", contentType = "application/pdf", body = pdfStream)
           pin = NewPin(
             PinType.EMAIL,
             title = Some(mail.header.subject),
+            fileKey = Some(uuid),
             original = Some(html)
           ) // todo preserve FROM, add link
           investigationIds = getInvestigationIds(mail.header.recipients)
-          _                = println(investigationIds)
           _ <- ZIO.foreachDiscard(investigationIds) { investigationId =>
             inboxService.addPin(investigationId, pin)
-          } // todo do not discard errors
+          }
           _ <- ZIO.foreachDiscard(mail.header.messageId) { messageId =>
-            processedEmailRepo.create(ProcessedEmail(messageId, mail.header.recipients.to.map(_.address)))
+            processedEmailRepo
+              .create(ProcessedEmail(messageId, mail.header.recipients.to.map(_.address)))
           }
         yield ()
       }
@@ -98,17 +98,19 @@ final class EmailServiceLive(
     recipients.to
       .map(_.address)
       .collect { case InvestigationId(id) =>
-        Try(UUID.fromString(id)).toOption
+        id
       }
-      .flatten
 
   private def emptySearchResult[A] = ZIO.succeed(SearchResult[A](Vector.empty))
 
   private object InvestigationId:
-    def unapply(email: String): Option[String] =
+    def unapply(email: String): Option[UUID] =
       val nameAndDomain = emailConfig.nastenkaAlias.split('@')
-      val nameAndId     = nameAndDomain.head.split('+')
-      if nameAndId.tail.nonEmpty then Some(nameAndId.tail.head) else None
+      val Name          = nameAndDomain.head
+      val Domain        = nameAndDomain(1)
+      email match
+        case s"$Name+$id@$Domain" => Try(UUID.fromString(id)).toOption
+        case _                    => None
 
 end EmailServiceLive
 

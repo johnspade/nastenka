@@ -17,6 +17,8 @@ import ru.johnspade.nastenka.email.EmailServiceLive
 import ru.johnspade.nastenka.email.PrintServiceLive
 import ru.johnspade.nastenka.email.ProcessedEmailRepositoryLive
 import ru.johnspade.nastenka.inbox.InboxServiceLive
+import ru.johnspade.nastenka.inbox.S3Config
+import ru.johnspade.nastenka.inbox.S3Live
 import ru.johnspade.nastenka.persistence.InvestigationRepositoryLive
 import ru.johnspade.nastenka.telegram.BotConfig
 import ru.johnspade.nastenka.telegram.TelegramBot
@@ -78,5 +80,7 @@ object Main extends ZIOAppDefault:
       ChromeServiceLive.layer,
       PrintServiceLive.layer,
       EmailConfig.live,
-      EmailServiceLive.layer
+      EmailServiceLive.layer,
+      S3Config.live,
+      S3Live.layer
     )

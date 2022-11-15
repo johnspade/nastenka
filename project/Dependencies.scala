@@ -29,6 +29,7 @@ object Dependencies {
   val zioJson    = "dev.zio" %% "zio-json"          % V.zioJson
   val zioLogging = "dev.zio" %% "zio-logging-slf4j" % V.zioLogging
   val zioNio = "dev.zio" %% "zio-nio" % V.zioNio exclude ("org.scala-lang.modules", "scala-collection-compat_2.13")
+  val zioS3  = "dev.zio" %% "zio-s3"  % "0.4.2.1" exclude ("org.scala-lang.modules", "scala-collection-compat_2.13")
   val logback         = "ch.qos.logback"          % "logback-classic"  % V.logback
   val flyway          = "org.flywaydb"            % "flyway-core"      % V.flyway
   val postgresql      = "org.postgresql"          % "postgresql"       % V.postgresql
@@ -39,7 +40,7 @@ object Dependencies {
   val zioInteropCats  = "dev.zio"                %% "zio-interop-cats" % V.zioCats
   val emilCommon      = "com.github.eikek"       %% "emil-common"      % V.emil
   val emilJavamail    = "com.github.eikek"       %% "emil-javamail"    % V.emil
-  val cdtClient       = "com.github.kklisura.cdt" % "cdt-java-client"  % "4.0.0"
+  val cdtClient       = "com.github.kklisura.cdt" % "cdt-java-client"  % V.javaCdtClient
 
   val zioTest    = "dev.zio" %% "zio-test"     % V.zio % Test
   val zioTestSbt = "dev.zio" %% "zio-test-sbt" % V.zio % Test

@@ -7,6 +7,7 @@ create table pins
     title varchar(255),
     text text,
     sender varchar(255),
+    file_key uuid,
     original text
 );
 

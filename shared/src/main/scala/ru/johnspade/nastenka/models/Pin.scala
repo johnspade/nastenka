@@ -12,6 +12,7 @@ final case class Pin(
     title: Option[String],
     text: Option[String],
     sender: Option[String],
+    fileKey: Option[UUID],
     original: Option[String]
 )
 
@@ -23,5 +24,6 @@ final case class NewPin(
     title: Option[String] = None,
     text: Option[String] = None,
     sender: Option[String] = None,
+    fileKey: Option[UUID] = None,
     original: Option[String] = None
 )

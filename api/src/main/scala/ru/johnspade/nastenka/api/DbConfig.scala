@@ -1,9 +1,10 @@
 package ru.johnspade.nastenka.api
 
-import java.net.URI
-
 import zio.IO
-import zio.config.*, ConfigDescriptor.*, ConfigSource.*
+import zio.config.ConfigDescriptor.*
+import zio.config.*
+
+import java.net.URI
 
 final case class DbConfig(driver: String, url: String, user: String, password: String)
 
