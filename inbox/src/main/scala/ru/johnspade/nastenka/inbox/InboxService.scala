@@ -24,7 +24,8 @@ trait InboxService:
       body: ZStream[Any, Throwable, Byte]
   ): ZIO[Any, Throwable, Unit]
 
-class InboxServiceLive(investigationRepo: InvestigationRepository, s3: S3, s3Config: S3Config) extends InboxService:
+final class InboxServiceLive(investigationRepo: InvestigationRepository, s3: S3, s3Config: S3Config)
+    extends InboxService:
 
   override def getInvestigations: ZIO[Any, Nothing, List[Investigation]] = investigationRepo.getAll.orDie
 

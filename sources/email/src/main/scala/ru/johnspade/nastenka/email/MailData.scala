@@ -6,6 +6,7 @@ import java.util.UUID
 
 final case class MailData(
     messageId: String,
+    from: Option[String],
     subject: String,
     body: String,
     investigationIds: List[UUID]

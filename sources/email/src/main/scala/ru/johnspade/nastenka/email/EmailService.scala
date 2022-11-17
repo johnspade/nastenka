@@ -1,18 +1,17 @@
 package ru.johnspade.nastenka.email
 
 import cats.syntax.all.*
-import emil.Mail
 import emil.SearchQuery.*
 import emil.*
 import emil.builder.*
 import emil.javamail.*
+import emil.javamail.conv.codec.given
 import zio.*
 import zio.interop.catz.*
 import zio.interop.catz.implicits.*
 
 import java.util.UUID
 import scala.util.Try
-import jakarta.mail.internet.MimeMessage
 
 trait EmailService:
   def collectEmailsToProcess(
@@ -34,10 +33,6 @@ final class EmailServiceLive(emailConfig: EmailConfig) extends EmailService:
       a.getInbox
         .flatMap(inbox => a.findFolder(Some(inbox), emailConfig.nastenkaFolder))
     }
-    def getAllEmails(folder: MailFolder) =
-      runEmil.run(
-        a.search(folder, 999)(All)
-      )
 
     def loadEmails(messageIds: Vector[String], folder: MailFolder) =
       val q = Or(messageIds.map(SearchQuery.MessageID(_)))
@@ -45,52 +40,62 @@ final class EmailServiceLive(emailConfig: EmailConfig) extends EmailService:
         a.searchAndLoad(folder, 999)(q)
       }
 
-    for
-      folder    <- findNastenkaFolder
-      allEmails <- folder.map(f => getAllEmails(f)).getOrElse(emptySearchResult)
-      messageIdsToProcess = allEmails.mails
-        .map { m =>
-          m.messageId -> getInvestigationIds(m.recipients)
-        }
-        .filterNot { case (messageIdOpt, targetInvestigationIds) =>
-          messageIdOpt.exists(id => alreadyProcessed.contains(id)) ||
-            targetInvestigationIds.intersect(investigationIds).isEmpty
-        }
-        .toMap
-        .collect { case (Some(messageId), targetInvestigationIds) =>
-          messageId -> targetInvestigationIds
-        }
-      emailsToProcess <- folder
-        .map { f =>
-          loadEmails(messageIdsToProcess.keySet.toVector, f)
-        }
-        .getOrElse(emptySearchResult)
-      result <- ZIO.collectAll(
-        emailsToProcess.mails
-          .collect {
-            case Mail(
-                  MailHeader(_, Some(messageId), _, _, _, _, _, _, subject, _, _),
-                  _,
-                  body,
-                  attachments
-                ) =>
-              for
-                htmlPart <- body.htmlPart
-                html     <- ZIO.fromEither(htmlPart.get.contentDecode)
-                investigationIds = messageIdsToProcess.get(messageId).getOrElse(List.empty)
-                emlFileOpt       = attachments.all.find(_.mimeType.baseType == MimeType("message", "rfc822"))
-              yield MailData(
-                messageId = messageId,
-                subject = subject,
-                body = html,
-                investigationIds = investigationIds
-              )
+    def collectEmails(folder: MailFolder) =
+      for
+        allEmails <- runEmil.run(
+          a.search(folder, 999)(All)
+        )
+        messageIdsToProcess = allEmails.mails
+          .map { m =>
+            m.messageId -> getInvestigationIds(m.recipients)
           }
-      )
-    yield result
-  end collectEmailsToProcess
+          .filterNot { case (messageIdOpt, targetInvestigationIds) =>
+            messageIdOpt.exists(id => alreadyProcessed.contains(id)) ||
+              targetInvestigationIds.intersect(investigationIds).isEmpty
+          }
+          .toMap
+          .collect { case (Some(messageId), targetInvestigationIds) =>
+            messageId -> targetInvestigationIds
+          }
+        emailsToProcess <- loadEmails(messageIdsToProcess.keySet.toVector, folder)
+        result <- ZIO.collectAll(
+          emailsToProcess.mails
+            .collect {
+              case message @ Mail(
+                    MailHeader(_, Some(messageId), _, _, _, _, _, _, _, _, _),
+                    _,
+                    _,
+                    attachments
+                  ) =>
+                val emlFile = attachments.all
+                  .find(_.mimeType.baseType == MimeType("message", "rfc822"))
+                val mailToPin = ZIO
+                  .foreach(emlFile) {
+                    _.content.compile
+                      .to(Array)
+                      .flatMap(JavaMailEmil.mailFromByteArray[Task](_))
+                  }
+                  .map(_.getOrElse(message))
+                for
+                  mail     <- mailToPin
+                  htmlPart <- mail.body.htmlPart
+                  html     <- ZIO.fromEither(htmlPart.get.contentDecode)
+                  investigationIds = messageIdsToProcess.get(messageId).getOrElse(List.empty)
+                yield MailData(
+                  messageId = messageId,
+                  from = mail.header.from.map(_.displayString),
+                  subject = mail.header.subject,
+                  body = html,
+                  investigationIds = investigationIds
+                )
+            }
+        )
+      yield result
 
-  private def emptySearchResult[A] = ZIO.succeed(SearchResult[A](Vector.empty))
+    findNastenkaFolder.flatMap { folderOpt =>
+      ZIO.foreach(folderOpt)(collectEmails).map(_.getOrElse(Vector.empty))
+    }
+  end collectEmailsToProcess
 
   def getInvestigationIds(recipients: Recipients) =
     recipients.to

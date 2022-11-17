@@ -37,7 +37,7 @@ final class EmailSourceServiceLive(
       .flattenIterables
       .schedule(Schedule.once andThen Schedule.spaced(5.seconds))
       .tap { mailData =>
-        import mailData.{messageId, subject, body, investigationIds}
+        import mailData.{messageId, from, subject, body, investigationIds}
 
         for
           uuid      <- ZIO.attempt(UUID.randomUUID())
@@ -45,10 +45,10 @@ final class EmailSourceServiceLive(
           _         <- inboxService.saveFile(key = s"$uuid.pdf", contentType = "application/pdf", body = pdfStream)
           pin = NewPin(
             PinType.EMAIL,
+            sender = from,
             title = Some(subject),
-            fileKey = Some(uuid),
-            original = Some(body)
-          ) // todo preserve FROM
+            fileKey = Some(uuid)
+          )
           _ <- ZIO.foreachDiscard(investigationIds) { investigationId =>
             inboxService.addPin(investigationId, pin)
           }
