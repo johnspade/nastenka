@@ -34,5 +34,5 @@ create table processed_emails
     message_id text
         constraint processed_emails_pk
             primary key,
-    recipients text[] not null
+    investigation_ids uuid[] not null
 );

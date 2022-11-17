@@ -9,6 +9,7 @@ object Dependencies {
     val zioQuill      = "4.6.0"
     val zioLogging    = "2.1.1"
     val zioNio        = "2.0.0"
+    val zioS3         = "0.4.2.1"
     val zioCats       = "3.3.0+10-274fad37-SNAPSHOT"
     val logback       = "1.2.7"
     val flyway        = "8.0.5"
@@ -29,7 +30,7 @@ object Dependencies {
   val zioJson    = "dev.zio" %% "zio-json"          % V.zioJson
   val zioLogging = "dev.zio" %% "zio-logging-slf4j" % V.zioLogging
   val zioNio = "dev.zio" %% "zio-nio" % V.zioNio exclude ("org.scala-lang.modules", "scala-collection-compat_2.13")
-  val zioS3  = "dev.zio" %% "zio-s3"  % "0.4.2.1" exclude ("org.scala-lang.modules", "scala-collection-compat_2.13")
+  val zioS3  = "dev.zio" %% "zio-s3"  % V.zioS3 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13")
   val logback         = "ch.qos.logback"          % "logback-classic"  % V.logback
   val flyway          = "org.flywaydb"            % "flyway-core"      % V.flyway
   val postgresql      = "org.postgresql"          % "postgresql"       % V.postgresql

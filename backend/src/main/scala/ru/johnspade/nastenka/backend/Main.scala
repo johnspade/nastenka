@@ -12,8 +12,9 @@ import ru.johnspade.nastenka.api.InvestigationRoutes
 import ru.johnspade.nastenka.api.NastenkaServer
 import ru.johnspade.nastenka.email.ChromeServiceLive
 import ru.johnspade.nastenka.email.EmailConfig
-import ru.johnspade.nastenka.email.EmailService
 import ru.johnspade.nastenka.email.EmailServiceLive
+import ru.johnspade.nastenka.email.EmailSourceService
+import ru.johnspade.nastenka.email.EmailSourceServiceLive
 import ru.johnspade.nastenka.email.PrintServiceLive
 import ru.johnspade.nastenka.email.ProcessedEmailRepositoryLive
 import ru.johnspade.nastenka.inbox.InboxServiceLive
@@ -58,7 +59,7 @@ object Main extends ZIOAppDefault:
           ZIO.serviceWithZIO[TelegramBot](_.start(botConfig.port, "0.0.0.0").useForever)
         }
         .zipPar {
-          ZIO.serviceWithZIO[EmailService](_.createStream.run(ZSink.drain))
+          ZIO.serviceWithZIO[EmailSourceService](_.createStream.run(ZSink.drain))
         }
     yield ()
 
@@ -81,6 +82,7 @@ object Main extends ZIOAppDefault:
       PrintServiceLive.layer,
       EmailConfig.live,
       EmailServiceLive.layer,
+      EmailSourceServiceLive.layer,
       S3Config.live,
       S3Live.layer
     )
