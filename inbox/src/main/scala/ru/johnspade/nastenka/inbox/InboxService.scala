@@ -1,22 +1,22 @@
 package ru.johnspade.nastenka.inbox
 
 import io.github.arainko.ducktape.*
+import ru.johnspade.nastenka.errors.InvestigationNotFound
 import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.NewPin
 import ru.johnspade.nastenka.models.Pin
 import ru.johnspade.nastenka.persistence.InvestigationRepository
 import zio.*
-import zio.s3.MultipartUploadOptions
-import zio.s3.S3
-import zio.s3.UploadOptions
+import zio.s3.*
 import zio.stream.ZStream
 
+import java.sql.SQLException
 import java.util.UUID
 
 trait InboxService:
   def getInvestigations: ZIO[Any, Nothing, List[Investigation]]
 
-  def addPin(investigationId: UUID, newPin: NewPin): ZIO[Any, Throwable, Unit]
+  def addPin(investigationId: UUID, newPin: NewPin): ZIO[Any, InvestigationNotFound | SQLException | Throwable, Unit]
 
   def saveFile(
       key: String,
@@ -29,7 +29,10 @@ final class InboxServiceLive(investigationRepo: InvestigationRepository, s3: S3,
 
   override def getInvestigations: ZIO[Any, Nothing, List[Investigation]] = investigationRepo.getAll.orDie
 
-  override def addPin(investigationId: UUID, newPin: NewPin): ZIO[Any, Throwable, Unit] =
+  override def addPin(
+      investigationId: UUID,
+      newPin: NewPin
+  ): ZIO[Any, InvestigationNotFound | SQLException | Throwable, Unit] =
     for
       clock <- ZIO.clock
       now   <- clock.instant

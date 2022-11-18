@@ -2,6 +2,7 @@ package ru.johnspade.nastenka.persistence
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill
+import ru.johnspade.nastenka.errors.InvestigationNotFound
 import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationPin
 import ru.johnspade.nastenka.models.Pin
@@ -21,7 +22,7 @@ trait InvestigationRepository:
 
   def update(investigation: Investigation): ZIO[Any, SQLException, Investigation]
 
-  def addPin(investigationId: UUID, pin: Pin): ZIO[Any, Throwable, Unit]
+  def addPin(investigationId: UUID, pin: Pin): ZIO[Any, InvestigationNotFound | SQLException | Throwable, Unit]
 
 class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2[SnakeCase, PluralizedTableNames]])
     extends InvestigationRepository:
@@ -46,24 +47,31 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
     )
       .as(investigation)
 
-  override def addPin(investigationId: UUID, pin: Pin): ZIO[Any, Throwable, Unit] =
+  override def addPin(
+      investigationId: UUID,
+      pin: Pin
+  ): ZIO[Any, InvestigationNotFound | SQLException | Throwable, Unit] =
     val savePin = run(query[Pin].insertValue(lift(pin)))
     val saveInvestigationPin = run(
       query[InvestigationPin].insertValue(lift(InvestigationPin(investigationId, pin.id)))
     )
-    transaction(
+
+    transaction {
+      val findInvestigation: ZIO[Any, InvestigationNotFound | SQLException, Investigation] =
+        run(quote(query[Investigation].filter(_.id == lift(investigationId)).forUpdate))
+          .map(_.headOption)
+          .some
+          .mapError(_.getOrElse(InvestigationNotFound(investigationId)))
       for
-        investigation <- run(quote(query[Investigation].filter(_.id == lift(investigationId)).forUpdate)).map(_.head)
+        investigation <- findInvestigation
         updatedInvestigation = investigation.copy(pinsOrder = investigation.pinsOrder :+ pin.id)
         _ <- savePin
         _ <- saveInvestigationPin
         _ <- update(updatedInvestigation)
       yield ()
-    )
+    }
 
-  extension [T](q: Query[T]) {
-    inline def forUpdate = quote(sql"$q for update".as[Query[T]])
-  }
+  extension [T](q: Query[T]) inline def forUpdate = quote(sql"$q for update".as[Query[T]])
 
 end InvestigationRepositoryLive
 

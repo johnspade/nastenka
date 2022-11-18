@@ -1,5 +1,6 @@
 package ru.johnspade.nastenka.email
 
+import ru.johnspade.nastenka.errors.InvestigationNotFound
 import ru.johnspade.nastenka.inbox.InboxService
 import ru.johnspade.nastenka.models.NewPin
 import ru.johnspade.nastenka.models.PinType
@@ -39,22 +40,35 @@ final class EmailSourceServiceLive(
       .tap { mailData =>
         import mailData.{messageId, from, subject, body, investigationIds}
 
-        for
+        (for
           uuid      <- ZIO.attempt(UUID.randomUUID())
           pdfStream <- printService.print(body)
-          _         <- inboxService.saveFile(key = s"$uuid.pdf", contentType = "application/pdf", body = pdfStream)
+          _ <- inboxService
+            .saveFile(key = s"$uuid.pdf", contentType = "application/pdf", body = pdfStream)
+            .retryN(1)
           pin = NewPin(
             PinType.EMAIL,
             sender = from,
             title = Some(subject),
             fileKey = Some(uuid)
           )
-          _ <- ZIO.foreachDiscard(investigationIds) { investigationId =>
-            inboxService.addPin(investigationId, pin)
-          }
-          _ <- processedEmailRepo.create(ProcessedEmail(messageId, investigationIds))
-        yield ()
+          _ <- ZIO
+            .foreachDiscard(investigationIds) { investigationId =>
+              inboxService.addPin(investigationId, pin)
+            }
+            .retryN(1)
+            .catchAll(e => ZIO.logError(s"Cannot create pin for messageId=$messageId: $e"))
+          _ <- processedEmailRepo
+            .create(ProcessedEmail(messageId, investigationIds))
+            .retryN(1)
+        yield ())
+          .retryN(1)
       }
+      .onError(cause =>
+        ZIO.attemptBlocking(cause.squash.printStackTrace()).orDie *>
+          ZIO.logErrorCause(s"EmailSource stream failed, retrying}", cause)
+      )
+      .retry(Schedule.exponential(1.second))
   end createStream
 
 end EmailSourceServiceLive

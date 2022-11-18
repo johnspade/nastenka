@@ -35,10 +35,11 @@ final class EmailServiceLive(emailConfig: EmailConfig) extends EmailService:
     }
 
     def loadEmails(messageIds: Vector[String], folder: MailFolder) =
-      val q = Or(messageIds.map(SearchQuery.MessageID(_)))
-      runEmil.run {
-        a.searchAndLoad(folder, 999)(q)
-      }
+      if messageIds.isEmpty then emptySearchResult
+      else
+        runEmil.run {
+          a.searchAndLoad(folder, 999)(Or(messageIds.map(SearchQuery.MessageID(_))))
+        }
 
     def collectEmails(folder: MailFolder) =
       for
@@ -97,7 +98,9 @@ final class EmailServiceLive(emailConfig: EmailConfig) extends EmailService:
     }
   end collectEmailsToProcess
 
-  def getInvestigationIds(recipients: Recipients) =
+  private def emptySearchResult[A] = ZIO.succeed(SearchResult[A](Vector.empty))
+
+  private def getInvestigationIds(recipients: Recipients) =
     recipients.to
       .map(_.address)
       .collect { case InvestigationId(id) =>

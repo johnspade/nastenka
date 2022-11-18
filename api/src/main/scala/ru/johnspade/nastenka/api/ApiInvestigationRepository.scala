@@ -26,8 +26,6 @@ trait ApiInvestigationRepository:
 
   def update(investigation: Investigation): ZIO[Any, SQLException, Investigation]
 
-  def addPin(investigationId: UUID, pin: Pin): ZIO[Any, Throwable, Unit]
-
 class ApiInvestigationRepositoryLive(
     investigationRepo: InvestigationRepository,
     quill: Quill.Postgres[CompositeNamingStrategy2[SnakeCase, PluralizedTableNames]]
@@ -72,9 +70,6 @@ class ApiInvestigationRepositoryLive(
 
   override def update(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
     investigationRepo.update(investigation)
-
-  override def addPin(investigationId: UUID, pin: Pin): ZIO[Any, Throwable, Unit] =
-    investigationRepo.addPin(investigationId, pin)
 end ApiInvestigationRepositoryLive
 
 object ApiInvestigationRepositoryLive:
