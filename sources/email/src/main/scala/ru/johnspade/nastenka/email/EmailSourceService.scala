@@ -64,10 +64,7 @@ final class EmailSourceServiceLive(
         yield ())
           .retryN(1)
       }
-      .onError(cause =>
-        ZIO.attemptBlocking(cause.squash.printStackTrace()).orDie *>
-          ZIO.logErrorCause(s"EmailSource stream failed, retrying}", cause)
-      )
+      .onError(cause => ZIO.logErrorCause(s"EmailSource stream failed, retrying}", cause))
       .retry(Schedule.exponential(1.second))
   end createStream
 

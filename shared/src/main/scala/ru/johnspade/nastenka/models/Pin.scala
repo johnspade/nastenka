@@ -24,6 +24,6 @@ final case class NewPin(
     title: Option[String] = None,
     text: Option[String] = None,
     sender: Option[String] = None,
-    fileKey: Option[UUID] = None,
+    fileKey: Option[UUID] = None, // todo String
     original: Option[String] = None
 )
