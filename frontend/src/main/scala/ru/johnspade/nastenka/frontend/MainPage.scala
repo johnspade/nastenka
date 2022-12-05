@@ -10,6 +10,7 @@ object MainPage extends Component:
 
   private val splitter = SplitRender[Page, HtmlElement](Router.router.$currentPage)
     .collectSignal[InvestigationPage] { $page => new InvestigationView($page).body }
+    .collectSignal[PinPage] { $page => new PinView($page).body }
     .collectStatic(HomePage)(div())
 
   private val loadInvestigationsEventBus = new EventBus[Unit]
@@ -28,7 +29,7 @@ object MainPage extends Component:
 
   def body: Div =
     div(
-      cls("grid md:grid-cols-4 md:h-screen"),
+      cls("md:grid md:grid-cols-6 h-screen flex flex-col"),
       div(
         cls("md:col-span-1 flex bg-gray-100"),
         nav(
@@ -48,7 +49,7 @@ object MainPage extends Component:
         )
       ),
       div(
-        cls("md:col-span-3 p-4"),
+        cls("md:col-span-5 p-4 grow"),
         child <-- splitter.$view
       )
     )

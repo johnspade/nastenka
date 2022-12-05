@@ -6,6 +6,7 @@ import ru.johnspade.nastenka.frontend.Page
 import ru.johnspade.nastenka.frontend.Requests
 import ru.johnspade.nastenka.frontend.Router
 import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.frontend.Page
 
 final class InvestigationIndexView(val $investigations: Signal[List[Investigation]]) extends Component:
   override def body =
@@ -13,7 +14,13 @@ final class InvestigationIndexView(val $investigations: Signal[List[Investigatio
       cls(""),
       children <-- $investigations.split(_.id) { (id, investigation, _) =>
         li(
-          cls("text-lg text-gray-700 hover:bg-gray-200"),
+          cls("text-lg"),
+          cls <-- Router.router.$currentPage.map { page =>
+            page match
+              case Page.InvestigationPage(selectedId, _) if id == selectedId => "bg-gray-400 text-black font-bold"
+              case Page.PinPage(selectedId, _, _) if id == selectedId        => "bg-gray-400 text-black font-bold"
+              case _                                                         => "text-gray-700 hover:bg-gray-200"
+          },
           a(
             cls("block flex items-center p-2"),
             Router.navigateTo(Page.InvestigationPage(id, Some(investigation.title))),

@@ -2,6 +2,7 @@ package ru.johnspade.nastenka.api
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill
+import ru.johnspade.nastenka.errors.PinNotFound
 import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationFull
 import ru.johnspade.nastenka.models.InvestigationPin
@@ -25,6 +26,8 @@ trait ApiInvestigationRepository:
   def getFull(id: UUID): ZIO[Any, SQLException, InvestigationFull]
 
   def update(investigation: Investigation): ZIO[Any, SQLException, Investigation]
+
+  def getPin(pinId: UUID): ZIO[Any, PinNotFound | SQLException, Pin]
 
 class ApiInvestigationRepositoryLive(
     investigationRepo: InvestigationRepository,
@@ -70,6 +73,12 @@ class ApiInvestigationRepositoryLive(
 
   override def update(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
     investigationRepo.update(investigation)
+
+  override def getPin(pinId: UUID): ZIO[Any, PinNotFound | SQLException, Pin] =
+    run(query[Pin].filter(_.id == lift(pinId)))
+      .map(_.headOption)
+      .some
+      .mapError(_.getOrElse(PinNotFound(pinId)))
 end ApiInvestigationRepositoryLive
 
 object ApiInvestigationRepositoryLive:

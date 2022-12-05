@@ -39,6 +39,11 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
           .orDie
         investigation <- apiService.save(investigation)
       yield Response.json(investigation.toJson)
+
+    case Method.GET -> !! / "investigations" / investigationId / "pins" / pinId =>
+      apiService
+        .getPin(UUID.fromString(pinId))
+        .map(pin => Response.json(pin.toJson))
   }
 
 object InvestigationRoutes:

@@ -1,4 +1,7 @@
 const path = require('path')
+const colors = require('tailwindcss/colors')
+const typography = require('@tailwindcss/typography')
+const forms = require('@tailwindcss/forms')
 
 module.exports = {
     content: [
@@ -9,5 +12,6 @@ module.exports = {
     theme: {
         extend: {},
     },
-    plugins: [],
+    corePlugins: {},
+    plugins: [typography, forms]
 }

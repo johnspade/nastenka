@@ -50,7 +50,8 @@ final class EmailSourceServiceLive(
             PinType.EMAIL,
             sender = from,
             title = Some(subject),
-            fileKey = Some(uuid)
+            fileKey = Some(uuid),
+            original = Some(body)
           )
           _ <- ZIO
             .foreachDiscard(investigationIds) { investigationId =>

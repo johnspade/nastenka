@@ -8,12 +8,14 @@ import zio.json.*
 import java.util.UUID
 
 enum Page(val title: Option[String]):
-  case InvestigationPage(id: UUID, investigationTitle: Option[String]) extends Page(investigationTitle)
-  case HomePage                                                        extends Page(Some("Nastenka"))
+  case InvestigationPage(id: UUID, investigationTitle: Option[String])                 extends Page(investigationTitle)
+  case HomePage                                                                        extends Page(Some("Nastenka"))
+  case PinPage(investigationId: UUID, pinId: UUID, investigationTitle: Option[String]) extends Page(investigationTitle)
 
 object Page:
   given investigationPageJsonCodec: JsonCodec[InvestigationPage] = DeriveJsonCodec.gen
   given homePageJsonCodec: JsonCodec[HomePage.type]              = DeriveJsonCodec.gen
+  given pinPageJsonCodec: JsonCodec[PinPage]                     = DeriveJsonCodec.gen
   given pageJsonCodec: JsonCodec[Page]                           = DeriveJsonCodec.gen
 
 object Router:
@@ -29,8 +31,15 @@ object Router:
       pattern = root / "investigations" / segment[String] / endOfSegments
     )
 
+  val pinRoute: Route[PinPage, (String, String)] =
+    Route(
+      encode = (page: PinPage) => (page.investigationId.toString, page.pinId.toString),
+      decode = args => PinPage(UUID.fromString(args._1), UUID.fromString(args._2), None),
+      pattern = root / "investigations" / segment[String] / "pins" / segment[String] / endOfSegments
+    )
+
   val router = new Router[Page](
-    routes = List(homeRoute, investigationRoute),
+    routes = List(homeRoute, investigationRoute, pinRoute),
     getPageTitle = _.title.getOrElse("Nastenka"),
     serializePage = page => page.toJson,
     deserializePage = pageStr => pageStr.fromJson[Page].getOrElse(HomePage)

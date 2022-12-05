@@ -1,14 +1,15 @@
 package ru.johnspade.nastenka.frontend
 
 import com.raquo.laminar.api.L.*
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.InvestigationFull
+import ru.johnspade.nastenka.models.InvestigationsResponse
+import ru.johnspade.nastenka.models.PinModel
 import sttp.client3.*
 import zio.json.*
 
-import scala.concurrent.Future
-import ru.johnspade.nastenka.models.InvestigationsResponse
-import ru.johnspade.nastenka.models.Investigation
-import ru.johnspade.nastenka.models.InvestigationFull
 import java.util.UUID
+import scala.concurrent.Future
 
 object Requests:
   private val backend: SttpBackend[Future, Any] = FetchBackend()
@@ -30,5 +31,8 @@ object Requests:
 
   def getInvestigationFull(id: UUID): EventStream[InvestigationFull] =
     getRequest[InvestigationFull]("investigations", id)
+
+  def getPin(investigationId: UUID, pinId: UUID): EventStream[PinModel] =
+    getRequest[PinModel]("investigations", investigationId, "pins", pinId)
 
 end Requests

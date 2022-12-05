@@ -1,66 +1,105 @@
 package ru.johnspade.nastenka.frontend.views
 
 import com.raquo.laminar.api.L.*
+import org.scalajs.dom.HTMLIFrameElement
 import ru.johnspade.nastenka.frontend.Component
 import ru.johnspade.nastenka.frontend.Page
 import ru.johnspade.nastenka.frontend.Requests
 import ru.johnspade.nastenka.frontend.Router
 import ru.johnspade.nastenka.models.InvestigationFull
-
-import java.util.UUID
+import ru.johnspade.nastenka.models.Pin
 import ru.johnspade.nastenka.models.PinType
 import ru.johnspade.nastenka.models.PinType.*
-import ru.johnspade.nastenka.models.PinType
+
+import java.util.UUID
 
 final class InvestigationView($investigationPage: Signal[Page.InvestigationPage]) extends Component:
   private val $investigation: EventStream[InvestigationFull] =
     $investigationPage.flatMap(page => Requests.getInvestigationFull(page.id))
 
+  private val selectedPin: EventBus[Pin] = new EventBus[Pin]
+
   override def body: Div = div(
-    cls("flex flex-col gap-2 flex-grow max-w-screen-md"),
-    children <-- $investigation.map(_.pins.map { pin =>
+    cls("h-full flex flex-col"),
+    p(
+      cls("text-6xl bold text-gray-700 text-center md:text-left"),
+      child <-- $investigation.map(_.title)
+    ),
+    p(
+      cls("text-xl text-gray-300 text-center md:text-left"),
+      "nastenka@ilopatin.ru"
+    ),
+    div(
+      cls("grid md:grid-cols-5 flex-grow"),
       div(
-        cls("p-4 bg-white rounded-md shadow-lg flex flex-col space-y-2"),
+        cls("md:col-span-2"),
         div(
-          cls("flex flex-row space-x-2 items-center"),
-          div(
-            cls("shrink-0"),
-            getPinTypeIcon(pin.pinType)
-          ),
-          p(
-            cls("text-gray-500"),
-            pin.sender.getOrElse("")
-          )
-        ),
-        pin.title
-          .map { title =>
-            div(
-              cls("text-2xl"),
-              title
-            )
-          }
-          .getOrElse(emptyMod),
-        div(
-          pin.fileKey
-            .map { key =>
+          cls("flex flex-col grow w-full gap-2 max-w-screen-md mt-2"),
+          children <-- $investigation.map(inv =>
+            inv.pins.map { pin =>
               a(
-                href(s"http://127.0.0.1:9000/nastenka/$key.pdf"),
-                cls("underline"),
-                key.toString() + ".pdf"
+                Router.navigateTo(Page.PinPage(inv.id, pin.id, Some(inv.title))),
+                div(
+                  cls("p-4 bg-white rounded-md shadow-lg flex flex-col space-y-2"),
+                  div(
+                    cls("flex flex-row space-x-2 items-center"),
+                    div(
+                      cls("shrink-0"),
+                      getPinTypeIcon(pin.pinType)
+                    ),
+                    p(
+                      cls("text-gray-500"),
+                      pin.sender.getOrElse("")
+                    )
+                  ),
+                  pin.title
+                    .map { title =>
+                      div(
+                        cls("text-2xl"),
+                        title
+                      )
+                    }
+                    .getOrElse(emptyMod),
+                  div(
+                    pin.fileKey
+                      .map { key =>
+                        a(
+                          href(s"http://127.0.0.1:9000/nastenka/$key.pdf"),
+                          cls("underline"),
+                          key.toString() + ".pdf"
+                        )
+                      }
+                      .getOrElse(
+                        div()
+                      )
+                  ),
+                  div(
+                    cls("mt-4"),
+                    p(
+                      pin.text.getOrElse("")
+                    )
+                  ),
+                  onClick --> { _ => selectedPin.emit(pin) }
+                )
               )
             }
-            .getOrElse(
-              div()
-            )
-        ),
-        div(
-          cls("mt-4"),
-          p(
-            pin.text.getOrElse("")
           )
         )
+      ),
+      div(
+        idAttr("pin-content"),
+        cls("md:col-span-3"),
+        child <-- selectedPin.events.filter(_.pinType == PinType.EMAIL).map { pin =>
+          iframe(
+            styleAttr("width: 100%; height: 100%"),
+            onLoad --> { e =>
+              val f = e.target.asInstanceOf[HTMLIFrameElement]
+              f.contentWindow.document.body.innerHTML = pin.original.getOrElse("")
+            }
+          )
+        }
       )
-    })
+    )
   )
 
   private def getPinTypeIcon(pinType: PinType) =
