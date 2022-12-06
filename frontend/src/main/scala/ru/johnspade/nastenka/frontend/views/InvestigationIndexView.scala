@@ -18,7 +18,6 @@ final class InvestigationIndexView(val $investigations: Signal[List[Investigatio
           cls <-- Router.router.$currentPage.map { page =>
             page match
               case Page.InvestigationPage(selectedId, _) if id == selectedId => "bg-gray-400 text-black font-bold"
-              case Page.PinPage(selectedId, _, _) if id == selectedId        => "bg-gray-400 text-black font-bold"
               case _                                                         => "text-gray-700 hover:bg-gray-200"
           },
           a(

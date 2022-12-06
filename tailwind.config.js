@@ -2,6 +2,7 @@ const path = require('path')
 const colors = require('tailwindcss/colors')
 const typography = require('@tailwindcss/typography')
 const forms = require('@tailwindcss/forms')
+const lineClamp = require('@tailwindcss/line-clamp')
 
 module.exports = {
     content: [
@@ -13,5 +14,5 @@ module.exports = {
         extend: {},
     },
     corePlugins: {},
-    plugins: [typography, forms]
+    plugins: [path, colors, typography, forms, lineClamp]
 }

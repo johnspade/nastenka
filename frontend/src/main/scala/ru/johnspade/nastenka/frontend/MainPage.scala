@@ -10,7 +10,6 @@ object MainPage extends Component:
 
   private val splitter = SplitRender[Page, HtmlElement](Router.router.$currentPage)
     .collectSignal[InvestigationPage] { $page => new InvestigationView($page).body }
-    .collectSignal[PinPage] { $page => new PinView($page).body }
     .collectStatic(HomePage)(div())
 
   private val loadInvestigationsEventBus = new EventBus[Unit]
@@ -33,17 +32,17 @@ object MainPage extends Component:
       div(
         cls("md:col-span-1 flex bg-gray-100"),
         nav(
-          cls("grow"),
+          cls("grow min-w-0"),
           div(
+            cls("truncate"),
             a(
               Router.navigateTo(HomePage),
               h1(
-                cls("text-4xl bold uppercase text-gray-700 tracking-wider p-4 text-center md:text-left"),
+                cls("text-4xl bold uppercase text-gray-700 tracking-wide p-4 text-center md:text-left"),
                 "Nastenka"
               ),
               onClick --> { _ => loadInvestigationsEventBus.emit(()) }
-            ),
-            div()
+            )
           ),
           new InvestigationIndexView($loadedInvestigations).body
         )
