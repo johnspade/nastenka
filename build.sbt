@@ -107,7 +107,6 @@ lazy val email = project
       zioInteropCats,
       emilCommon,
       emilJavamail,
-      cdtClient,
       logback
     )
   )

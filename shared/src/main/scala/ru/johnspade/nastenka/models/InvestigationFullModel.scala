@@ -21,7 +21,7 @@ final case class PinModel(
     title: Option[String],
     text: Option[String],
     sender: Option[String],
-    original: Option[String]
+    html: Option[String]
 )
 object PinModel:
   given jsonCodec: JsonCodec[PinModel] = DeriveJsonCodec.gen

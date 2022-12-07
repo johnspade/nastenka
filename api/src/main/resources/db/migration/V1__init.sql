@@ -8,7 +8,7 @@ create table pins
     text text,
     sender varchar(255),
     file_key uuid,
-    original text
+    html text
 );
 
 create table investigations

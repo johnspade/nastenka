@@ -17,8 +17,7 @@ trait EmailSourceService:
 final class EmailSourceServiceLive(
     emailService: EmailService,
     processedEmailRepo: ProcessedEmailRepository,
-    inboxService: InboxService,
-    printService: PrintService
+    inboxService: InboxService
 ) extends EmailSourceService:
 
   override def createStream: ZStream[Any, Throwable, Any] =
@@ -38,20 +37,16 @@ final class EmailSourceServiceLive(
       .flattenIterables
       .schedule(Schedule.once andThen Schedule.spaced(5.seconds))
       .tap { mailData =>
-        import mailData.{messageId, from, subject, body, investigationIds}
+        import mailData.{messageId, from, subject, htmlBody, textBody, investigationIds}
 
         (for
-          uuid      <- ZIO.attempt(UUID.randomUUID())
-          pdfStream <- printService.print(body)
-          _ <- inboxService
-            .saveFile(key = s"$uuid.pdf", contentType = "application/pdf", body = pdfStream)
-            .retryN(1)
+          uuid <- ZIO.attempt(UUID.randomUUID())
           pin = NewPin(
             PinType.EMAIL,
             sender = from,
             title = Some(subject),
-            fileKey = Some(uuid),
-            original = Some(body)
+            html = htmlBody,
+            text = textBody
           )
           _ <- ZIO
             .foreachDiscard(investigationIds) { investigationId =>
@@ -72,4 +67,4 @@ final class EmailSourceServiceLive(
 end EmailSourceServiceLive
 
 object EmailSourceServiceLive:
-  val layer = ZLayer.fromFunction(new EmailSourceServiceLive(_, _, _, _))
+  val layer = ZLayer.fromFunction(new EmailSourceServiceLive(_, _, _))

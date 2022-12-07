@@ -10,12 +10,10 @@ import ru.johnspade.nastenka.api.DbConfig
 import ru.johnspade.nastenka.api.FlywayMigration
 import ru.johnspade.nastenka.api.InvestigationRoutes
 import ru.johnspade.nastenka.api.NastenkaServer
-import ru.johnspade.nastenka.email.ChromeServiceLive
 import ru.johnspade.nastenka.email.EmailConfig
 import ru.johnspade.nastenka.email.EmailServiceLive
 import ru.johnspade.nastenka.email.EmailSourceService
 import ru.johnspade.nastenka.email.EmailSourceServiceLive
-import ru.johnspade.nastenka.email.PrintServiceLive
 import ru.johnspade.nastenka.email.ProcessedEmailRepositoryLive
 import ru.johnspade.nastenka.inbox.InboxServiceLive
 import ru.johnspade.nastenka.inbox.S3Config
@@ -71,6 +69,7 @@ object Main extends ZIOAppDefault:
       dataSourceLive,
       postgresLive,
       InvestigationRepositoryLive.layer,
+      ru.johnspade.nastenka.api.EmailConfig.live,
       ApiInvestigationRepositoryLive.layer,
       ApiInvestigationServiceLive.layer,
       InboxServiceLive.layer,
@@ -78,8 +77,6 @@ object Main extends ZIOAppDefault:
       TelegramBotApi.live,
       TelegramBot.live,
       ProcessedEmailRepositoryLive.layer,
-      ChromeServiceLive.layer,
-      PrintServiceLive.layer,
       EmailConfig.live,
       EmailServiceLive.layer,
       EmailSourceServiceLive.layer,

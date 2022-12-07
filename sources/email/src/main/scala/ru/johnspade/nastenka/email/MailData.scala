@@ -8,6 +8,7 @@ final case class MailData(
     messageId: String,
     from: Option[String],
     subject: String,
-    body: String,
+    htmlBody: Option[String],
+    textBody: Option[String],
     investigationIds: List[UUID]
 )

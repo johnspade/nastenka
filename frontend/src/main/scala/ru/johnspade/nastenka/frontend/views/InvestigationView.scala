@@ -7,20 +7,21 @@ import ru.johnspade.nastenka.frontend.Page
 import ru.johnspade.nastenka.frontend.Requests
 import ru.johnspade.nastenka.frontend.Router
 import ru.johnspade.nastenka.models.InvestigationFull
-import ru.johnspade.nastenka.models.Pin
+import ru.johnspade.nastenka.models.InvestigationFullModel
+import ru.johnspade.nastenka.models.PinModel
 import ru.johnspade.nastenka.models.PinType
 import ru.johnspade.nastenka.models.PinType.*
 
 import java.util.UUID
 
 final class InvestigationView(investigationPage: Signal[Page.InvestigationPage]) extends Component:
-  private val selectedPin: Var[Option[Pin]] = Var(None)
+  private val selectedPin: Var[Option[PinModel]] = Var(None)
 
-  private val investigation: EventStream[InvestigationFull] =
+  private val investigation: EventStream[InvestigationFullModel] =
     investigationPage.flatMap(page => Requests.getInvestigationFull(page.id))
   private val pinIsSelected = selectedPin.signal.map(_.isDefined)
 
-  private val deselectPin = selectedPin.writer.contramap[InvestigationFull](_ => None)
+  private val deselectPin = selectedPin.writer.contramap[InvestigationFullModel](_ => None)
 
   override def body: Div = div(
     cls("h-full flex flex-col"),
@@ -30,7 +31,7 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
     ),
     p(
       cls("text-xl text-gray-300 text-center md:text-left"),
-      "nastenka@ilopatin.ru"
+      child <-- investigation.map(_.email)
     ),
     div(
       cls("flex md:grid md:grid-cols-5 grow"),
@@ -97,27 +98,35 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
                   pin.sender.getOrElse("")
                 )
               ),
-              p(
-                cls(""),
-                pin.text.getOrElse("")
-              ),
-              div(
-                idAttr("pin-html"),
-                cls("grow"),
-                iframe(
-                  cls("w-full h-full mt-4"),
-                  onLoad --> { e =>
-                    val f = e.target.asInstanceOf[HTMLIFrameElement]
-                    f.contentWindow.document.body.innerHTML = pin.original.getOrElse("")
-                  }
-                )
-              )
+              renderContent(pin)
             )
           case None => List(emptyNode)
         }
       )
     )
   )
+
+  private def renderContent(pin: PinModel) =
+    pin.html
+      .map { htmlBody =>
+        div(
+          idAttr("pin-html"),
+          cls("grow"),
+          iframe(
+            cls("w-full h-full mt-4"),
+            onLoad --> { e =>
+              val f = e.target.asInstanceOf[HTMLIFrameElement]
+              f.contentWindow.document.body.innerHTML = htmlBody
+            }
+          )
+        )
+      }
+      .getOrElse(
+        p(
+          cls("whitespace-pre-wrap"),
+          pin.text.getOrElse("")
+        )
+      )
 
   private def getPinTypeIcon(pinType: PinType) =
     pinType match

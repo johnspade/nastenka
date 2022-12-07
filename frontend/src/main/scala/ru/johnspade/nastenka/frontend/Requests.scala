@@ -2,7 +2,7 @@ package ru.johnspade.nastenka.frontend
 
 import com.raquo.laminar.api.L.*
 import ru.johnspade.nastenka.models.Investigation
-import ru.johnspade.nastenka.models.InvestigationFull
+import ru.johnspade.nastenka.models.InvestigationFullModel
 import ru.johnspade.nastenka.models.InvestigationsResponse
 import ru.johnspade.nastenka.models.PinModel
 import sttp.client3.*
@@ -29,8 +29,8 @@ object Requests:
   def getAllInvestigations: EventStream[List[Investigation]] =
     getRequest[InvestigationsResponse]("investigations").map(_.investigations)
 
-  def getInvestigationFull(id: UUID): EventStream[InvestigationFull] =
-    getRequest[InvestigationFull]("investigations", id)
+  def getInvestigationFull(id: UUID): EventStream[InvestigationFullModel] =
+    getRequest[InvestigationFullModel]("investigations", id)
 
   def getPin(investigationId: UUID, pinId: UUID): EventStream[PinModel] =
     getRequest[PinModel]("investigations", investigationId, "pins", pinId)

@@ -80,13 +80,16 @@ final class EmailServiceLive(emailConfig: EmailConfig) extends EmailService:
                 for
                   mail     <- mailToPin
                   htmlPart <- mail.body.htmlPart
-                  html     <- ZIO.fromEither(htmlPart.get.contentDecode)
+                  textPart <- mail.body.textPart
+                  html     <- ZIO.fromEither(htmlPart.traverse(_.contentDecode))
+                  text     <- ZIO.fromEither(textPart.traverse(_.contentDecode))
                   investigationIds = messageIdsToProcess.get(messageId).getOrElse(List.empty)
                 yield MailData(
                   messageId = messageId,
                   from = mail.header.from.map(_.displayString),
                   subject = mail.header.subject,
-                  body = html,
+                  htmlBody = html,
+                  textBody = text,
                   investigationIds = investigationIds
                 )
             }
