@@ -13,17 +13,20 @@ import ru.johnspade.nastenka.models.PinType.*
 
 import java.util.UUID
 
-final class InvestigationView($investigationPage: Signal[Page.InvestigationPage]) extends Component:
-  private val selectedPin: EventBus[Option[Pin]] = new EventBus[Option[Pin]]
-  private val $investigation: EventStream[InvestigationFull] =
-    $investigationPage.flatMap(page => Requests.getInvestigationFull(page.id))
-  private val pinIsSelected = selectedPin.events.map(_.isDefined)
+final class InvestigationView(investigationPage: Signal[Page.InvestigationPage]) extends Component:
+  private val selectedPin: Var[Option[Pin]] = Var(None)
+
+  private val investigation: EventStream[InvestigationFull] =
+    investigationPage.flatMap(page => Requests.getInvestigationFull(page.id))
+  private val pinIsSelected = selectedPin.signal.map(_.isDefined)
+
+  private val deselectPin = selectedPin.writer.contramap[InvestigationFull](_ => None)
 
   override def body: Div = div(
     cls("h-full flex flex-col"),
     p(
       cls("text-6xl bold text-gray-700 text-center md:text-left"),
-      child <-- $investigation.map(_.title)
+      child <-- investigation.map(_.title)
     ),
     p(
       cls("text-xl text-gray-300 text-center md:text-left"),
@@ -36,11 +39,12 @@ final class InvestigationView($investigationPage: Signal[Page.InvestigationPage]
         cls.toggle("hidden") <-- pinIsSelected,
         div(
           cls("flex flex-col grow w-full gap-2 max-w-screen-md mt-2"),
-          children <-- $investigation.map(inv =>
+          children <-- investigation.map(inv =>
             inv.pins.map { pin =>
               div(
+                investigation --> deselectPin,
                 cls("p-4 bg-white rounded-md shadow-lg flex flex-col"),
-                cls.toggle("bg-gray-200") <-- selectedPin.events.map(_.exists(_.id == pin.id)),
+                cls.toggle("bg-gray-200") <-- selectedPin.signal.map(_.exists(_.id == pin.id)),
                 div(
                   cls("flex flex-row space-x-2 items-center"),
                   div(
@@ -62,7 +66,7 @@ final class InvestigationView($investigationPage: Signal[Page.InvestigationPage]
                     pin.text.getOrElse("")
                   )
                 ),
-                onClick --> { _ => selectedPin.emit(Some(pin)) }
+                onClick --> { _ => selectedPin.set(Some(pin)) }
               )
             }
           )
@@ -70,12 +74,12 @@ final class InvestigationView($investigationPage: Signal[Page.InvestigationPage]
       ),
       div(
         cls("md:col-span-3 flex flex-col grow p-2 md:px-4 space-y-2"),
-        children <-- selectedPin.events.collect {
+        children <-- selectedPin.signal.map {
           case Some(pin) =>
             List(
               button(
                 cls("font-bold py-2 px-4 rounded bg-gray-200 text-gray-700 md:hidden"),
-                onClick --> { _ => selectedPin.emit(None) },
+                onClick --> { _ => selectedPin.set(None) },
                 "← Back"
               ),
               p(
@@ -98,7 +102,7 @@ final class InvestigationView($investigationPage: Signal[Page.InvestigationPage]
                 pin.text.getOrElse("")
               ),
               div(
-                idAttr("pin-content"),
+                idAttr("pin-html"),
                 cls("grow"),
                 iframe(
                   cls("w-full h-full mt-4"),
