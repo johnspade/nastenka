@@ -24,19 +24,23 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
   private val deselectPin = selectedPin.writer.contramap[InvestigationFullModel](_ => None)
 
   override def body: Div = div(
-    cls("h-full flex flex-col"),
-    p(
-      cls("text-6xl bold text-gray-700 text-center md:text-left"),
-      child <-- investigation.map(_.title)
-    ),
-    p(
-      cls("text-xl text-gray-300 text-center md:text-left"),
-      child <-- investigation.map(_.email)
+    cls("h-full flex flex-col overflow-auto"),
+    div(
+      cls("md:block"),
+      cls.toggle("hidden") <-- pinIsSelected,
+      p(
+        cls("text-6xl bold text-gray-700 text-center md:text-left"),
+        child <-- investigation.map(_.title)
+      ),
+      p(
+        cls("text-xl text-gray-300 text-center md:text-left"),
+        child <-- investigation.map(_.email)
+      )
     ),
     div(
-      cls("flex md:grid md:grid-cols-5 grow"),
+      cls("flex md:grid md:grid-cols-5 grow overflow-auto"),
       div(
-        cls("md:block md:col-span-2"),
+        cls("md:block md:col-span-2 overflow-auto"),
         cls.toggle("hidden") <-- pinIsSelected,
         div(
           cls("flex flex-col grow w-full gap-2 max-w-screen-md mt-2"),
@@ -113,7 +117,7 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
           idAttr("pin-html"),
           cls("grow"),
           iframe(
-            cls("w-full h-full mt-4"),
+            cls("w-full h-full"),
             onLoad --> { e =>
               val f = e.target.asInstanceOf[HTMLIFrameElement]
               f.contentWindow.document.body.innerHTML = htmlBody

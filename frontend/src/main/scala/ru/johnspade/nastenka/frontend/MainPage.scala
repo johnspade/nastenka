@@ -28,7 +28,7 @@ object MainPage extends Component:
 
   def body: Div =
     div(
-      cls("md:grid md:grid-cols-6 h-screen flex flex-col"),
+      cls("md:grid md:grid-cols-6 h-screen flex flex-col overflow-auto"),
       div(
         cls("md:col-span-1 flex bg-gray-100"),
         nav(
@@ -48,7 +48,7 @@ object MainPage extends Component:
         )
       ),
       div(
-        cls("md:col-span-5 p-4 grow"),
+        cls("md:col-span-5 p-4 grow overflow-auto"),
         child <-- splitter.$view
       )
     )
