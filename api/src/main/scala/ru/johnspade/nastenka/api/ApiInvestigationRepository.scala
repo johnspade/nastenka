@@ -8,6 +8,7 @@ import ru.johnspade.nastenka.models.InvestigationFull
 import ru.johnspade.nastenka.models.InvestigationPin
 import ru.johnspade.nastenka.models.Pin
 import ru.johnspade.nastenka.models.PinType
+import ru.johnspade.nastenka.models.UpdatedInvestigation
 import ru.johnspade.nastenka.persistence.InvestigationRepository
 import ru.johnspade.nastenka.persistence.codecs.given
 import zio.*
@@ -25,7 +26,7 @@ trait ApiInvestigationRepository:
 
   def getFull(id: UUID): ZIO[Any, SQLException, InvestigationFull]
 
-  def update(investigation: Investigation): ZIO[Any, SQLException, Investigation]
+  def update(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, SQLException, Investigation]
 
   def getPin(pinId: UUID): ZIO[Any, PinNotFound | SQLException, Pin]
 
@@ -71,8 +72,8 @@ class ApiInvestigationRepositoryLive(
         }.head
       }
 
-  override def update(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
-    investigationRepo.update(investigation)
+  override def update(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, SQLException, Investigation] =
+    investigationRepo.update(id, investigation)
 
   override def getPin(pinId: UUID): ZIO[Any, PinNotFound | SQLException, Pin] =
     run(query[Pin].filter(_.id == lift(pinId)))

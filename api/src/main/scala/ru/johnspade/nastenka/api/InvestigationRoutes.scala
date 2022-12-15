@@ -1,13 +1,14 @@
 package ru.johnspade.nastenka.api
 
+import ru.johnspade.nastenka.models.Investigation
+import ru.johnspade.nastenka.models.InvestigationsResponse
+import ru.johnspade.nastenka.models.NewInvestigation
+import ru.johnspade.nastenka.models.UpdatedInvestigation
 import zhttp.http.*
 import zio.*
 import zio.json.*
 
 import java.util.UUID
-import ru.johnspade.nastenka.models.InvestigationsResponse
-import ru.johnspade.nastenka.models.NewInvestigation
-import ru.johnspade.nastenka.models.Investigation
 
 class InvestigationRoutes(apiService: ApiInvestigationService):
   val routes: Http[Any, Throwable, Request, Response] = Http.collectZIO[Request] {
@@ -30,14 +31,14 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
         investigation <- apiService.create(newInvestigation)
       yield Response.json(investigation.toJson)
 
-    case req @ Method.PUT -> !! / "investigations" =>
+    case req @ Method.PUT -> !! / "investigations" / id =>
       for
         bodyAsString <- req.body.asString.orDie
         investigation <- ZIO
-          .fromEither(bodyAsString.fromJson[Investigation])
+          .fromEither(bodyAsString.fromJson[UpdatedInvestigation])
           .mapError(msg => new RuntimeException(msg)) // todo handle errors
           .orDie
-        investigation <- apiService.save(investigation)
+        investigation <- apiService.save(UUID.fromString(id), investigation)
       yield Response.json(investigation.toJson)
 
     case Method.GET -> !! / "investigations" / investigationId / "pins" / pinId =>

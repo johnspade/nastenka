@@ -7,6 +7,7 @@ import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationPin
 import ru.johnspade.nastenka.models.Pin
 import ru.johnspade.nastenka.models.PinType
+import ru.johnspade.nastenka.models.UpdatedInvestigation
 import zio.*
 
 import java.sql.SQLException
@@ -20,7 +21,7 @@ trait InvestigationRepository:
 
   def get(id: UUID): ZIO[Any, SQLException, Investigation]
 
-  def update(investigation: Investigation): ZIO[Any, SQLException, Investigation]
+  def update(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, SQLException, Investigation]
 
   def addPin(investigationId: UUID, pin: Pin): ZIO[Any, InvestigationNotFound | SQLException | Throwable, Unit]
 
@@ -39,13 +40,13 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
   )
     .map(_.head)
 
-  override def update(investigation: Investigation): ZIO[Any, SQLException, Investigation] =
+  override def update(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, SQLException, Investigation] =
     run(
       query[Investigation]
-        .filter(_.id == lift(investigation.id))
+        .filter(_.id == lift(id))
         .update(_.title -> lift(investigation.title), _.pinsOrder -> lift(investigation.pinsOrder))
+        .returning(investigation => investigation)
     )
-      .as(investigation)
 
   override def addPin(
       investigationId: UUID,
@@ -67,7 +68,10 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
         updatedInvestigation = investigation.copy(pinsOrder = investigation.pinsOrder :+ pin.id)
         _ <- savePin
         _ <- saveInvestigationPin
-        _ <- update(updatedInvestigation)
+        _ <- update(
+          investigationId,
+          UpdatedInvestigation(investigationId, updatedInvestigation.title, updatedInvestigation.pinsOrder)
+        )
       yield ()
     }
 

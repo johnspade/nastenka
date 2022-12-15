@@ -5,6 +5,7 @@ import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationFullModel
 import ru.johnspade.nastenka.models.InvestigationsResponse
 import ru.johnspade.nastenka.models.PinModel
+import ru.johnspade.nastenka.models.UpdatedInvestigation
 import sttp.client3.*
 import zio.json.*
 
@@ -26,6 +27,16 @@ object Requests:
     }
   }
 
+  def putRequest[In: JsonEncoder, Out: JsonDecoder](body: In)(path: Any*): EventStream[Out] = {
+    val request = quickRequest.put(uri"$baseUrl/$path").body(body.toJson)
+    EventStream.fromFuture(backend.send(request)).map { response =>
+      response.body.fromJson[Out] match {
+        case Right(b) => b
+        case Left(e)  => throw new Error(s"Error parsing JSON: $e")
+      }
+    }
+  }
+
   def getAllInvestigations: EventStream[List[Investigation]] =
     getRequest[InvestigationsResponse]("investigations").map(_.investigations)
 
@@ -34,5 +45,8 @@ object Requests:
 
   def getPin(investigationId: UUID, pinId: UUID): EventStream[PinModel] =
     getRequest[PinModel]("investigations", investigationId, "pins", pinId)
+
+  def saveInvestigation(investigationId: UUID, investigation: UpdatedInvestigation): EventStream[Investigation] =
+    putRequest[UpdatedInvestigation, Investigation](investigation)("investigations", investigationId)
 
 end Requests

@@ -8,8 +8,8 @@ import java.util.UUID
 final case class InvestigationFullModel(
     id: UUID,
     title: String,
-    pins: List[PinModel],
-    pinsOrder: List[UUID],
+    pins: Seq[PinModel],
+    pinsOrder: Seq[UUID],
     email: String
 )
 object InvestigationFullModel:

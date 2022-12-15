@@ -5,6 +5,7 @@ import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationFullModel
 import ru.johnspade.nastenka.models.NewInvestigation
 import ru.johnspade.nastenka.models.PinModel
+import ru.johnspade.nastenka.models.UpdatedInvestigation
 import zio.*
 
 import java.util.UUID
@@ -16,7 +17,7 @@ trait ApiInvestigationService:
 
   def create(newInvestigation: NewInvestigation): ZIO[Any, Nothing, Investigation]
 
-  def save(investigation: Investigation): ZIO[Any, Nothing, Investigation]
+  def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, Nothing, Investigation]
 
   def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel]
 
@@ -46,8 +47,10 @@ class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository,
     yield savedInvestigation).orDie
 
   // todo validate pins order
-  override def save(investigation: Investigation): ZIO[Any, Nothing, Investigation] =
-    investigationRepo.update(investigation).orDie
+  override def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, Nothing, Investigation] =
+    investigationRepo
+      .update(id, investigation)
+      .orDie
 
   override def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel] =
     investigationRepo.getPin(pinId).orDie.map(_.to[PinModel])

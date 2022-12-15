@@ -1,16 +1,21 @@
 package ru.johnspade.nastenka.frontend.views
 
 import com.raquo.laminar.api.L.*
+import org.scalajs.dom.Element
+import org.scalajs.dom.EventTarget
 import org.scalajs.dom.HTMLIFrameElement
+import org.scalajs.dom.Node
 import ru.johnspade.nastenka.frontend.Component
 import ru.johnspade.nastenka.frontend.Page
 import ru.johnspade.nastenka.frontend.Requests
 import ru.johnspade.nastenka.frontend.Router
+import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationFull
 import ru.johnspade.nastenka.models.InvestigationFullModel
 import ru.johnspade.nastenka.models.PinModel
 import ru.johnspade.nastenka.models.PinType
 import ru.johnspade.nastenka.models.PinType.*
+import ru.johnspade.nastenka.models.UpdatedInvestigation
 
 import java.util.UUID
 
@@ -23,7 +28,23 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
 
   private val deselectPin = selectedPin.writer.contramap[InvestigationFullModel](_ => None)
 
+  private val draggedElement: Var[Option[Element]] = Var(None)
+
+  val pinMovedBus = new EventBus[(InvestigationFullModel, PinModel, Int)]
+  val saveInvestigationStream = pinMovedBus.events
+    .map { case (investigation, pin, newIndex) =>
+      draggedElement.set(None) // todo use updater
+      val ids = investigation.pins.map(_.id)
+      UpdatedInvestigation(
+        investigation.id,
+        investigation.title,
+        ids.patch(ids.indexOf(pin.id), Vector(), 1).patch(newIndex, Vector(pin.id), 0)
+      )
+    }
+    .flatMap(investigation => Requests.saveInvestigation(investigation.id, investigation))
+
   override def body: Div = div(
+    saveInvestigationStream --> Observer.empty,
     cls("h-full flex flex-col overflow-auto"),
     div(
       cls("md:block"),
@@ -42,13 +63,15 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
       div(
         cls("md:block md:col-span-2 overflow-auto"),
         cls.toggle("hidden") <-- pinIsSelected,
-        div(
+        ul(
+          idAttr("pins-list"),
           cls("flex flex-col grow w-full gap-2 max-w-screen-md mt-2"),
+          onDragOver --> { e => e.preventDefault() },
           children <-- investigation.map(inv =>
-            inv.pins.map { pin =>
-              div(
+            inv.pins.sortBy(pin => inv.pinsOrder.indexOf(pin.id)).map { pin =>
+              li(
                 investigation --> deselectPin,
-                cls("p-4 bg-white rounded-md shadow-lg flex flex-col"),
+                cls("p-4 bg-white rounded-md shadow-lg flex flex-col cursor-pointer"),
                 cls.toggle("bg-gray-200") <-- selectedPin.signal.map(_.exists(_.id == pin.id)),
                 div(
                   cls("flex flex-row space-x-2 items-center"),
@@ -71,7 +94,34 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
                     pin.text.getOrElse("")
                   )
                 ),
-                onClick --> { _ => selectedPin.set(Some(pin)) }
+                onClick --> { _ => selectedPin.set(Some(pin)) },
+                draggable(true),
+                onDragStart --> { e =>
+                  e.dataTransfer.effectAllowed = "move"
+                  e.dataTransfer.setData("text/plain", null)
+                  draggedElement.set(Some(e.target.asInstanceOf[Element]))
+                },
+                composeEvents(onDragEnd) {
+                  _.map { e =>
+                    val target   = e.target.asInstanceOf[Element]
+                    val newIndex = target.parentNode.childNodes.filter(_.nodeName == "LI").indexOf(target)
+                    (inv, pin, newIndex)
+                  }
+                } --> pinMovedBus.writer,
+                onDragOver --> { e =>
+                  e.preventDefault()
+                  draggedElement
+                    .now()
+                    .map { selected =>
+                      def getParentLi(el: Node): Node =
+                        if el.nodeName == "LI" then el else getParentLi(el.parentNode)
+
+                      val target = getParentLi(e.target.asInstanceOf[Element]).asInstanceOf[Element]
+                      if isBefore(selected, target) then target.parentNode.insertBefore(selected, target)
+                      else target.parentNode.insertBefore(selected, target.nextElementSibling)
+                    }
+                    .getOrElse(())
+                }
               )
             }
           )
@@ -169,3 +219,12 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
             )
           )
         )
+
+  private def isBefore(el1: Element, el2: Element): Boolean =
+    def go(el: Element): Boolean =
+      if el == null then false
+      else if el == el2 then true
+      else go(el.previousElementSibling)
+
+    if el2.parentNode == el1.parentNode then go(el1.previousElementSibling)
+    else false
