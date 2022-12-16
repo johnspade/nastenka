@@ -17,7 +17,7 @@ trait ApiInvestigationService:
 
   def create(newInvestigation: NewInvestigation): ZIO[Any, Nothing, Investigation]
 
-  def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, Nothing, Investigation]
+  def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, Nothing, InvestigationFullModel]
 
   def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel]
 
@@ -47,10 +47,10 @@ class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository,
     yield savedInvestigation).orDie
 
   // todo validate pins order
-  override def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, Nothing, Investigation] =
+  override def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, Nothing, InvestigationFullModel] =
     investigationRepo
       .update(id, investigation)
-      .orDie
+      .orDie *> getFull(id)
 
   override def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel] =
     investigationRepo.getPin(pinId).orDie.map(_.to[PinModel])

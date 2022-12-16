@@ -46,7 +46,10 @@ object Requests:
   def getPin(investigationId: UUID, pinId: UUID): EventStream[PinModel] =
     getRequest[PinModel]("investigations", investigationId, "pins", pinId)
 
-  def saveInvestigation(investigationId: UUID, investigation: UpdatedInvestigation): EventStream[Investigation] =
-    putRequest[UpdatedInvestigation, Investigation](investigation)("investigations", investigationId)
+  def saveInvestigation(
+      investigationId: UUID,
+      investigation: UpdatedInvestigation
+  ): EventStream[InvestigationFullModel] =
+    putRequest[UpdatedInvestigation, InvestigationFullModel](investigation)("investigations", investigationId)
 
 end Requests

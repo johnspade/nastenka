@@ -30,11 +30,12 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
 
   private val draggedElement: Var[Option[Element]] = Var(None)
 
-  val pinMovedBus = new EventBus[(InvestigationFullModel, PinModel, Int)]
-  val saveInvestigationStream = pinMovedBus.events
+  private val pinMovedBus    = new EventBus[(InvestigationFullModel, PinModel, Int)]
+  private val pinMovedStream = pinMovedBus.events
+
+  private val saveInvestigationStream = pinMovedStream
     .map { case (investigation, pin, newIndex) =>
-      draggedElement.set(None) // todo use updater
-      val ids = investigation.pins.map(_.id)
+      val ids = investigation.pinsOrder
       UpdatedInvestigation(
         investigation.id,
         investigation.title,
@@ -43,19 +44,22 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
     }
     .flatMap(investigation => Requests.saveInvestigation(investigation.id, investigation))
 
+  private val mergedInvestigation = EventStream.merge(investigation, saveInvestigationStream)
+
   override def body: Div = div(
-    saveInvestigationStream --> Observer.empty,
+    pinMovedStream --> draggedElement.updater { case (_, _) => None },
+    investigation --> deselectPin,
     cls("h-full flex flex-col overflow-auto"),
     div(
       cls("md:block"),
       cls.toggle("hidden") <-- pinIsSelected,
       p(
         cls("text-6xl bold text-gray-700 text-center md:text-left"),
-        child <-- investigation.map(_.title)
+        child <-- mergedInvestigation.map(_.title)
       ),
       p(
         cls("text-xl text-gray-300 text-center md:text-left"),
-        child <-- investigation.map(_.email)
+        child <-- mergedInvestigation.map(_.email)
       )
     ),
     div(
@@ -66,65 +70,12 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
         ul(
           idAttr("pins-list"),
           cls("flex flex-col grow w-full gap-2 max-w-screen-md mt-2"),
-          onDragOver --> { e => e.preventDefault() },
-          children <-- investigation.map(inv =>
-            inv.pins.sortBy(pin => inv.pinsOrder.indexOf(pin.id)).map { pin =>
-              li(
-                investigation --> deselectPin,
-                cls("p-4 bg-white rounded-md shadow-lg flex flex-col cursor-pointer"),
-                cls.toggle("bg-gray-200") <-- selectedPin.signal.map(_.exists(_.id == pin.id)),
-                div(
-                  cls("flex flex-row space-x-2 items-center"),
-                  div(
-                    cls("shrink-0"),
-                    getPinTypeIcon(pin.pinType)
-                  ),
-                  p(
-                    cls("text-gray-500"),
-                    pin.sender.getOrElse("")
-                  )
-                ),
-                div(
-                  cls("text-xl line-clamp-1"),
-                  pin.title.getOrElse("(no title)")
-                ),
-                div(
-                  cls("line-clamp-2"),
-                  p(
-                    pin.text.getOrElse("")
-                  )
-                ),
-                onClick --> { _ => selectedPin.set(Some(pin)) },
-                draggable(true),
-                onDragStart --> { e =>
-                  e.dataTransfer.effectAllowed = "move"
-                  e.dataTransfer.setData("text/plain", null)
-                  draggedElement.set(Some(e.target.asInstanceOf[Element]))
-                },
-                composeEvents(onDragEnd) {
-                  _.map { e =>
-                    val target   = e.target.asInstanceOf[Element]
-                    val newIndex = target.parentNode.childNodes.filter(_.nodeName == "LI").indexOf(target)
-                    (inv, pin, newIndex)
-                  }
-                } --> pinMovedBus.writer,
-                onDragOver --> { e =>
-                  e.preventDefault()
-                  draggedElement
-                    .now()
-                    .map { selected =>
-                      def getParentLi(el: Node): Node =
-                        if el.nodeName == "LI" then el else getParentLi(el.parentNode)
-
-                      val target = getParentLi(e.target.asInstanceOf[Element]).asInstanceOf[Element]
-                      if isBefore(selected, target) then target.parentNode.insertBefore(selected, target)
-                      else target.parentNode.insertBefore(selected, target.nextElementSibling)
-                    }
-                    .getOrElse(())
-                }
-              )
+          onDragOver --> { _.preventDefault() },
+          children <-- mergedInvestigation
+            .map(inv => inv.pins.sortBy(pin => inv.pinsOrder.indexOf(pin.id)).map(pin => (inv, pin)))
+            .split(_._2.id) { case (_, (inv, pin), pinStream) =>
+              renderPinCard(inv, pin, pinStream.map(_._2))
             }
-          )
         )
       ),
       div(
@@ -228,3 +179,67 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
 
     if el2.parentNode == el1.parentNode then go(el1.previousElementSibling)
     else false
+
+  private def renderPinCard(
+      initialInvestigation: InvestigationFullModel,
+      initialPin: PinModel,
+      pinStream: EventStream[PinModel]
+  ) =
+    val currentInvestigation = Var(initialInvestigation)
+    val currentPin           = Var(initialPin)
+    li(
+      mergedInvestigation --> currentInvestigation.writer,
+      pinStream --> currentPin.writer,
+      cls("p-4 bg-white rounded-md shadow-lg flex flex-col cursor-pointer"),
+      cls.toggle("bg-gray-200") <-- pinStream.map(pin => selectedPin.now().exists(_.id == pin.id)),
+      div(
+        cls("flex flex-row space-x-2 items-center"),
+        div(
+          cls("shrink-0"),
+          child <-- pinStream.map(pin => getPinTypeIcon(pin.pinType))
+        ),
+        p(
+          cls("text-gray-500"),
+          child.text <-- pinStream.map(_.sender.getOrElse(""))
+        )
+      ),
+      div(
+        cls("text-xl line-clamp-1"),
+        child.text <-- pinStream.map(_.title.getOrElse("(no title)"))
+      ),
+      div(
+        cls("line-clamp-2"),
+        p(
+          child.text <-- pinStream.map(_.text.getOrElse(""))
+        )
+      ),
+      composeEvents(onClick) {
+        _.combineWith(pinStream).map(_._2)
+      } --> { pin => selectedPin.set(Some(pin)) },
+      draggable(true),
+      onDragStart --> { e =>
+        e.dataTransfer.effectAllowed = "move"
+        e.dataTransfer.setData("text/plain", null)
+        draggedElement.set(Some(e.target.asInstanceOf[Element]))
+      },
+      composeEvents(onDragEnd) {
+        _.map { e =>
+          val target   = e.target.asInstanceOf[Element]
+          val newIndex = target.parentNode.childNodes.filter(_.nodeName == "LI").indexOf(target)
+          (currentInvestigation.now(), currentPin.now(), newIndex)
+        }
+      } --> pinMovedBus.writer,
+      onDragOver.preventDefault --> { e =>
+        draggedElement
+          .now()
+          .map { selected =>
+            def getParentLi(el: Node): Node =
+              if el.nodeName == "LI" then el else getParentLi(el.parentNode)
+
+            val target = getParentLi(e.target.asInstanceOf[Element]).asInstanceOf[Element]
+            if isBefore(selected, target) then target.parentNode.insertBefore(selected, target)
+            else target.parentNode.insertBefore(selected, target.nextElementSibling)
+          }
+          .getOrElse(())
+      }
+    )
