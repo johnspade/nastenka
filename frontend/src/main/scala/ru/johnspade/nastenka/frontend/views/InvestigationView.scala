@@ -28,7 +28,7 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
 
   private val deselectPin = selectedPin.writer.contramap[InvestigationFullModel](_ => None)
 
-  private val draggedElement: Var[Option[Element]] = Var(None)
+  private val draggedElement: Var[Option[(Element, Int)]] = Var(None)
 
   private val pinMovedBus    = new EventBus[(InvestigationFullModel, PinModel, Int)]
   private val pinMovedStream = pinMovedBus.events
@@ -68,8 +68,7 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
         cls("md:block md:col-span-2 overflow-auto"),
         cls.toggle("hidden") <-- pinIsSelected,
         ul(
-          idAttr("pins-list"),
-          cls("flex flex-col grow w-full gap-2 max-w-screen-md mt-2"),
+          cls("flex flex-col grow w-full max-w-screen-md mt-2 divide-y"),
           onDragOver --> { _.preventDefault() },
           children <-- mergedInvestigation
             .map(inv => inv.pins.sortBy(pin => inv.pinsOrder.indexOf(pin.id)).map(pin => (inv, pin)))
@@ -171,15 +170,6 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
           )
         )
 
-  private def isBefore(el1: Element, el2: Element): Boolean =
-    def go(el: Element): Boolean =
-      if el == null then false
-      else if el == el2 then true
-      else go(el.previousElementSibling)
-
-    if el2.parentNode == el1.parentNode then go(el1.previousElementSibling)
-    else false
-
   private def renderPinCard(
       initialInvestigation: InvestigationFullModel,
       initialPin: PinModel,
@@ -190,8 +180,12 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
     li(
       mergedInvestigation --> currentInvestigation.writer,
       pinStream --> currentPin.writer,
-      cls("p-4 bg-white rounded-md shadow-lg flex flex-col cursor-pointer"),
-      cls.toggle("bg-gray-200") <-- pinStream.map(pin => selectedPin.now().exists(_.id == pin.id)),
+      cls("p-2 bg-white flex flex-col cursor-pointer"),
+      cls.toggle("bg-gray-200") <-- pinStream
+        .combineWith(selectedPin.signal.changes)
+        .collect { case (pin, Some(selectedPin)) =>
+          pin.id == selectedPin.id
+        },
       div(
         cls("flex flex-row space-x-2 items-center"),
         div(
@@ -220,25 +214,36 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
       onDragStart --> { e =>
         e.dataTransfer.effectAllowed = "move"
         e.dataTransfer.setData("text/plain", null)
-        draggedElement.set(Some(e.target.asInstanceOf[Element]))
+      },
+      composeEvents(onDragStart) {
+        _.combineWith(pinStream)
+      } --> { case (e, pin) =>
+        val target = e.target.asInstanceOf[Element]
+        draggedElement.set(Some((target, currentInvestigation.now().pinsOrder.indexOf(pin))))
       },
       composeEvents(onDragEnd) {
         _.map { e =>
           val target   = e.target.asInstanceOf[Element]
           val newIndex = target.parentNode.childNodes.filter(_.nodeName == "LI").indexOf(target)
-          (currentInvestigation.now(), currentPin.now(), newIndex)
+          val inv      = currentInvestigation.now()
+          val pin      = currentPin.now()
+          (
+            inv,
+            pin,
+            draggedElement.now().map(_._2).getOrElse(inv.pinsOrder.indexOf(pin))
+          )
         }
       } --> pinMovedBus.writer,
       onDragOver.preventDefault --> { e =>
         draggedElement
           .now()
-          .map { selected =>
+          .map { (selected, _) =>
             def getParentLi(el: Node): Node =
               if el.nodeName == "LI" then el else getParentLi(el.parentNode)
 
             val target = getParentLi(e.target.asInstanceOf[Element]).asInstanceOf[Element]
-            if isBefore(selected, target) then target.parentNode.insertBefore(selected, target)
-            else target.parentNode.insertBefore(selected, target.nextElementSibling)
+            val index  = target.parentNode.childNodes.filter(_.nodeName == "LI").indexOf(target)
+            draggedElement.set(Some(selected, index))
           }
           .getOrElse(())
       }
