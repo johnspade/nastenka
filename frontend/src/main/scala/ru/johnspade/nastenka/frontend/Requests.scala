@@ -4,6 +4,7 @@ import com.raquo.laminar.api.L.*
 import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationFullModel
 import ru.johnspade.nastenka.models.InvestigationsResponse
+import ru.johnspade.nastenka.models.NewInvestigation
 import ru.johnspade.nastenka.models.PinModel
 import ru.johnspade.nastenka.models.UpdatedInvestigation
 import sttp.client3.*
@@ -37,6 +38,21 @@ object Requests:
     }
   }
 
+  def postRequest[In: JsonEncoder, Out: JsonDecoder](body: In)(path: Any*): EventStream[Out] = {
+    val request = quickRequest.post(uri"$baseUrl/$path").body(body.toJson)
+    EventStream.fromFuture(backend.send(request)).map { response =>
+      response.body.fromJson[Out] match {
+        case Right(b) => b
+        case Left(e)  => throw new Error(s"Error parsing JSON: $e")
+      }
+    }
+  }
+
+  def deleteRequest(path: Any*): EventStream[Unit] = {
+    val request = quickRequest.delete(uri"$baseUrl/$path")
+    EventStream.fromFuture(backend.send(request)).map(_ => ())
+  }
+
   def getAllInvestigations: EventStream[List[Investigation]] =
     getRequest[InvestigationsResponse]("investigations").map(_.investigations)
 
@@ -51,5 +67,11 @@ object Requests:
       investigation: UpdatedInvestigation
   ): EventStream[InvestigationFullModel] =
     putRequest[UpdatedInvestigation, InvestigationFullModel](investigation)("investigations", investigationId)
+
+  def createInvestigation(investigation: NewInvestigation): EventStream[Investigation] =
+    postRequest[NewInvestigation, Investigation](investigation)("investigations")
+
+  def deleteInvestigation(investigationId: UUID): EventStream[Unit] =
+    deleteRequest("investigations", investigationId)
 
 end Requests

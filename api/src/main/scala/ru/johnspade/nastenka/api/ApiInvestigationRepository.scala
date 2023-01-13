@@ -30,6 +30,8 @@ trait ApiInvestigationRepository:
 
   def getPin(pinId: UUID): ZIO[Any, PinNotFound | SQLException, Pin]
 
+  def delete(id: UUID): ZIO[Any, SQLException, Unit]
+
 class ApiInvestigationRepositoryLive(
     investigationRepo: InvestigationRepository,
     quill: Quill.Postgres[CompositeNamingStrategy2[SnakeCase, PluralizedTableNames]]
@@ -80,6 +82,10 @@ class ApiInvestigationRepositoryLive(
       .map(_.headOption)
       .some
       .mapError(_.getOrElse(PinNotFound(pinId)))
+
+  override def delete(id: UUID): ZIO[Any, SQLException, Unit] = run(
+    query[Investigation].filter(_.id == lift(id)).delete
+  ).unit
 end ApiInvestigationRepositoryLive
 
 object ApiInvestigationRepositoryLive:

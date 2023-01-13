@@ -54,7 +54,7 @@ object Main extends ZIOAppDefault:
       _ <- ZIO
         .serviceWithZIO[NastenkaServer](_.start)
         .zipPar {
-          ZIO.serviceWithZIO[TelegramBot](_.start(botConfig.port, "0.0.0.0").useForever)
+          ZIO.serviceWithZIO[TelegramBot](_.start())
         }
         .zipPar {
           ZIO.serviceWithZIO[EmailSourceService](_.createStream.run(ZSink.drain))

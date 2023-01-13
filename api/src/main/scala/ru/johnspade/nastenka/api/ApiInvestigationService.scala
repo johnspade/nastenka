@@ -21,6 +21,8 @@ trait ApiInvestigationService:
 
   def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel]
 
+  def delete(id: UUID): ZIO[Any, Nothing, Unit]
+
 class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository, emailConfig: EmailConfig)
     extends ApiInvestigationService:
   override def getAll: ZIO[Any, Nothing, List[Investigation]] =
@@ -54,6 +56,8 @@ class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository,
 
   override def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel] =
     investigationRepo.getPin(pinId).orDie.map(_.to[PinModel])
+
+  override def delete(id: UUID): ZIO[Any, Nothing, Unit] = investigationRepo.delete(id).orDie
 
 object ApiInvestigationServiceLive:
   val layer = ZLayer.fromFunction(new ApiInvestigationServiceLive(_, _))

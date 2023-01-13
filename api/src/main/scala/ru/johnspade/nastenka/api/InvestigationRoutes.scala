@@ -45,6 +45,9 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
       apiService
         .getPin(UUID.fromString(pinId))
         .map(pin => Response.json(pin.toJson))
+
+    case Method.DELETE -> !! / "investigations" / id =>
+      apiService.delete(UUID.fromString(id)).as(Response.status(Status.NoContent))
   }
 
 object InvestigationRoutes:
