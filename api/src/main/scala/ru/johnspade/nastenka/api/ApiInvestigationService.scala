@@ -1,6 +1,7 @@
 package ru.johnspade.nastenka.api
 
 import io.github.arainko.ducktape.*
+import ru.johnspade.nastenka.errors.InvestigationNotFound
 import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationFullModel
 import ru.johnspade.nastenka.models.NewInvestigation
@@ -13,11 +14,11 @@ import java.util.UUID
 trait ApiInvestigationService:
   def getAll: ZIO[Any, Nothing, List[Investigation]]
 
-  def getFull(id: UUID): ZIO[Any, Nothing, InvestigationFullModel]
+  def getFull(id: UUID): ZIO[Any, InvestigationNotFound, InvestigationFullModel]
 
   def create(newInvestigation: NewInvestigation): ZIO[Any, Nothing, Investigation]
 
-  def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, Nothing, InvestigationFullModel]
+  def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, InvestigationNotFound, InvestigationFullModel]
 
   def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel]
 
@@ -28,12 +29,12 @@ class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository,
   override def getAll: ZIO[Any, Nothing, List[Investigation]] =
     investigationRepo.getAll.orDie
 
-  override def getFull(id: UUID): ZIO[Any, Nothing, InvestigationFullModel] =
+  override def getFull(id: UUID): ZIO[Any, InvestigationNotFound, InvestigationFullModel] =
     import emailConfig._
 
     investigationRepo
       .getFull(id)
-      .orDie
+      .refineToOrDie[InvestigationNotFound]
       .map(
         _.into[InvestigationFullModel]
           .transform(Field.const(_.email, s"$username+$id@$domain"))
@@ -49,7 +50,10 @@ class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository,
     yield savedInvestigation).orDie
 
   // todo validate pins order
-  override def save(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, Nothing, InvestigationFullModel] =
+  override def save(
+      id: UUID,
+      investigation: UpdatedInvestigation
+  ): ZIO[Any, InvestigationNotFound, InvestigationFullModel] =
     investigationRepo
       .update(id, investigation)
       .orDie *> getFull(id)

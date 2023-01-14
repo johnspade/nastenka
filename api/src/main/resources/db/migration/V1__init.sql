@@ -17,7 +17,8 @@ create table investigations
         constraint investigations_pkey primary key,
     created_at timestamp not null,
     title varchar(255) not null,
-    pins_order uuid[] not null
+    pins_order uuid[] not null,
+    deleted boolean default false not null
 );
 
 create table if not exists investigations_pins

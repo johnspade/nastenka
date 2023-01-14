@@ -64,6 +64,7 @@ object MainPage extends Component:
       "Delete",
       onClick --> { _ =>
         investigationContext.now().foreach(inv => deleteInvestigationEventBus.emit(inv))
+        Router.router.pushState(HomePage)
       }
     )
   )

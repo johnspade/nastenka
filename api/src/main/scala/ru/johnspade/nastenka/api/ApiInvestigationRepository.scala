@@ -2,6 +2,7 @@ package ru.johnspade.nastenka.api
 
 import io.getquill.*
 import io.getquill.jdbczio.Quill
+import ru.johnspade.nastenka.errors.InvestigationNotFound
 import ru.johnspade.nastenka.errors.PinNotFound
 import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationFull
@@ -24,7 +25,7 @@ trait ApiInvestigationRepository:
 
   def get(id: UUID): ZIO[Any, SQLException, Investigation]
 
-  def getFull(id: UUID): ZIO[Any, SQLException, InvestigationFull]
+  def getFull(id: UUID): ZIO[Any, InvestigationNotFound | SQLException, InvestigationFull]
 
   def update(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, SQLException, Investigation]
 
@@ -49,10 +50,10 @@ class ApiInvestigationRepositoryLive(
 
   override def get(id: UUID): ZIO[Any, SQLException, Investigation] = investigationRepo.get(id)
 
-  override def getFull(id: UUID): ZIO[Any, SQLException, InvestigationFull] =
+  override def getFull(id: UUID): ZIO[Any, InvestigationNotFound | SQLException, InvestigationFull] =
     run(
       query[Investigation]
-        .filter(_.id == lift(id))
+        .filter(i => i.id == lift(id) && !i.deleted)
         .leftJoin(query[InvestigationPin])
         .on { case (investigation, investigationPin) =>
           investigationPin.investigationId == investigation.id
@@ -71,8 +72,11 @@ class ApiInvestigationRepositoryLive(
             investigationPinsList.flatMap(_._2),
             investigation.pinsOrder
           )
-        }.head
+        }.headOption
+
       }
+      .some
+      .mapError(_.getOrElse(InvestigationNotFound(id)))
 
   override def update(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, SQLException, Investigation] =
     investigationRepo.update(id, investigation)
@@ -84,7 +88,7 @@ class ApiInvestigationRepositoryLive(
       .mapError(_.getOrElse(PinNotFound(pinId)))
 
   override def delete(id: UUID): ZIO[Any, SQLException, Unit] = run(
-    query[Investigation].filter(_.id == lift(id)).delete
+    query[Investigation].filter(_.id == lift(id)).update(_.deleted -> lift(true))
   ).unit
 end ApiInvestigationRepositoryLive
 

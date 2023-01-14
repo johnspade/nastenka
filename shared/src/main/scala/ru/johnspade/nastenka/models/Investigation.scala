@@ -5,7 +5,13 @@ import zio.json.*
 import java.time.Instant
 import java.util.UUID
 
-final case class Investigation(id: UUID, createdAt: Instant, title: String, pinsOrder: Seq[UUID])
+final case class Investigation(
+    id: UUID,
+    createdAt: Instant,
+    title: String,
+    pinsOrder: Seq[UUID],
+    deleted: Boolean = false
+)
 object Investigation:
   given jsonCodec: JsonCodec[Investigation] = DeriveJsonCodec.gen
 

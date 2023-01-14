@@ -33,17 +33,19 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
     arrayRawDecoder[UUID, Col]
   private given arrayUuidEncoder[Col <: Seq[UUID]]: Encoder[Col] = arrayRawEncoder[UUID, Col]("uuid")
 
-  override def getAll: ZIO[Any, SQLException, List[Investigation]] = run(query[Investigation])
+  override def getAll: ZIO[Any, SQLException, List[Investigation]] = run(
+    query[Investigation].filter(i => !i.deleted)
+  )
 
   override def get(id: UUID): ZIO[Any, SQLException, Investigation] = run(
-    query[Investigation].filter(_.id == lift(id))
+    query[Investigation].filter(i => i.id == lift(id) && !i.deleted)
   )
     .map(_.head)
 
   override def update(id: UUID, investigation: UpdatedInvestigation): ZIO[Any, SQLException, Investigation] =
     run(
       query[Investigation]
-        .filter(_.id == lift(id))
+        .filter(i => i.id == lift(id) && !i.deleted)
         .update(_.title -> lift(investigation.title), _.pinsOrder -> lift(investigation.pinsOrder))
         .returning(investigation => investigation)
     )
@@ -59,7 +61,7 @@ class InvestigationRepositoryLive(quill: Quill.Postgres[CompositeNamingStrategy2
 
     transaction {
       val findInvestigation: ZIO[Any, InvestigationNotFound | SQLException, Investigation] =
-        run(quote(query[Investigation].filter(_.id == lift(investigationId)).forUpdate))
+        run(quote(query[Investigation].filter(i => i.id == lift(investigationId) && !i.deleted).forUpdate))
           .map(_.headOption)
           .some
           .mapError(_.getOrElse(InvestigationNotFound(investigationId)))
