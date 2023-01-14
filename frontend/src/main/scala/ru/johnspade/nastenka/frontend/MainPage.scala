@@ -24,7 +24,7 @@ object MainPage extends Component:
     saveInvestigationEventBus.events.flatMap(inv => Requests.saveInvestigation(inv.id, inv))
   private val loadInvestigationsAfterSave = saveInvestigationStream.map(_ => ())
 
-  private val $loadedInvestigations: EventStream[List[Investigation]] =
+  private val $loadedInvestigations: Signal[List[Investigation]] =
     EventStream
       .merge(
         Requests.getAllInvestigations,
@@ -34,6 +34,7 @@ object MainPage extends Component:
           }
       )
       .map(_.reverse)
+      .toSignal(List.empty)
 
   private val investigationContext: Var[Option[Investigation]] = Var(None)
 
@@ -128,7 +129,7 @@ object MainPage extends Component:
                   ),
                   onContextMenu --> { e => e.preventDefault() },
                   composeEvents(onContextMenu) {
-                    _.combineWith(invStream) // todo do not combine
+                    _.withCurrentValueOf(invStream)
                   } --> { case (e, inv) =>
                     investigationContext.set(Some(inv))
                     val menuRef = contextMenu.ref
