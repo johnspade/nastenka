@@ -1,4 +1,5 @@
 import Dependencies._
+import scala.sys.process.Process
 
 val scala3Version = "3.2.0"
 
@@ -20,7 +21,7 @@ val commonSettings = Seq(
 lazy val root = project
   .in(file("."))
   .settings(name := "nastenka")
-  .aggregate(shared, persistenceShared, api, inbox, telegram, email, backend, frontend)
+  .aggregate(shared, persistenceShared, api, inbox, telegram, email, server, frontend)
 
 lazy val shared = project
   .in(file("shared"))
@@ -111,17 +112,14 @@ lazy val email = project
     )
   )
 
-lazy val backend = project
-  .in(file("backend"))
+lazy val server = project
+  .in(file("server"))
   .dependsOn(api, inbox, telegram, email, persistenceShared)
   .settings(commonSettings)
-  .enablePlugins(JavaAppPackaging, DockerPlugin, AshScriptPlugin)
   .settings(
-    name            := "nastenka-backend",
-    dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
-    dockerExposedPorts ++= Seq(8080),
-    dockerAliases += dockerAlias.value.withTag(Option("latest")),
-    Docker / packageName := "nastenka"
+    name         := "nastenka-server",
+    jibBaseImage := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
+    jibName      := "nastenka"
   )
 
 lazy val frontend = project
@@ -141,3 +139,26 @@ lazy val frontend = project
       "com.softwaremill.sttp.client3" %%% "core"     % V.sttpClient
     )
   )
+
+val buildFrontend = taskKey[Unit]("Build frontend")
+
+buildFrontend := {
+  (frontend / Compile / fullLinkJS).value
+  val yarnInstallExit = Process(
+    "yarn" :: "install" :: "--immutable" :: "--immutable-cache" :: "--check-cache" :: Nil,
+    cwd = baseDirectory.value / "frontend"
+  ).run().exitValue()
+  if (yarnInstallExit > 0) {
+    throw new IllegalStateException(s"yarn install failed. See above for reason")
+  }
+
+  val buildExit = Process("yarn" :: "build" :: Nil, cwd = baseDirectory.value / "frontend").run().exitValue()
+  if (buildExit > 0) {
+    throw new IllegalStateException(s"Building frontend failed. See above for reason")
+  }
+
+  IO.copyDirectory(
+    baseDirectory.value / "frontend" / "dist",
+    baseDirectory.value / "api" / "target" / s"scala-$scala3Version" / "classes" / "static"
+  )
+}

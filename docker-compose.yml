@@ -21,18 +21,28 @@ services:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio1337
     command: server --console-address ":9001" /data
+  server:
+    image: registry.hub.docker.com/ru.johnspade/nastenka:latest
+    restart: always
+    depends_on: 
+      - db
+    ports:
+      - ${PORT:-8080}:8080
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/nastenka
+      - PORT=8080
+      - BOT_USER_ID
+      - BOT_TOKEN
+      - S3_ENDPOINT_URL
+      - S3_BUCKET_NAME
+      - EMAIL_USER
+      - EMAIL_PASSWORD
+      - EMAIL_FOLDER
+      - EMAIL_NASTENKA_ALIAS
+      - EMAIL_URL
+      - AWS_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
 
 volumes:
   minio: {}
-  # backend:
-  #   image: nastenka-backend:latest
-  #   restart: always
-  #   depends_on: 
-  #     - db
-  #   ports:
-  #     - ${PORT:-8080}:8080
-  #   environment:
-  #     - DATABASE_URL=postgresql://postgres:postgres@db:5432/nastenka
-  #     - PORT=8080
-  #     - BOT_USER_ID
-  #     - BOT_TOKEN

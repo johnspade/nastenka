@@ -1,4 +1,4 @@
-package ru.johnspade.nastenka.api
+package ru.johnspade.nastenka.models
 
 import zio.json.JsonCodec
 import zio.json.DeriveJsonCodec

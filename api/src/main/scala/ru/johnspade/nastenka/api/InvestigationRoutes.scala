@@ -4,6 +4,7 @@ import ru.johnspade.nastenka.errors.InvestigationNotFound
 import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationsResponse
 import ru.johnspade.nastenka.models.NewInvestigation
+import ru.johnspade.nastenka.models.Problem
 import ru.johnspade.nastenka.models.UpdatedInvestigation
 import zhttp.http.*
 import zio.*
@@ -12,17 +13,19 @@ import zio.json.*
 import java.util.UUID
 
 class InvestigationRoutes(apiService: ApiInvestigationService):
+  private val Prefix = "api"
+
   val routes: Http[Any, Throwable, Request, Response] = Http.collectZIO[Request] {
-    case Method.GET -> !! / "investigations" =>
+    case Method.GET -> !! / Prefix / "investigations" =>
       toResponse(apiService.getAll)(investigations => Response.json(InvestigationsResponse(investigations).toJson))
 
-    case Method.GET -> !! / "investigations" / id =>
+    case Method.GET -> !! / Prefix / "investigations" / id =>
       toResponse(
         apiService
           .getFull(UUID.fromString(id))
       )(investigation => Response.json(investigation.toJson))
 
-    case req @ Method.POST -> !! / "investigations" =>
+    case req @ Method.POST -> !! / Prefix / "investigations" =>
       toResponse(for
         bodyAsString <- req.body.asString.orDie
         newInvestigation <- ZIO
@@ -32,7 +35,7 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
         investigation <- apiService.create(newInvestigation)
       yield investigation)(investigation => Response.json(investigation.toJson))
 
-    case req @ Method.PUT -> !! / "investigations" / id =>
+    case req @ Method.PUT -> !! / Prefix / "investigations" / id =>
       toResponse(for
         bodyAsString <- req.body.asString.orDie
         investigation <- ZIO
@@ -42,20 +45,20 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
         investigation <- apiService.save(UUID.fromString(id), investigation)
       yield investigation)(investigation => Response.json(investigation.toJson))
 
-    case Method.GET -> !! / "investigations" / investigationId / "pins" / pinId =>
+    case Method.GET -> !! / Prefix / "investigations" / investigationId / "pins" / pinId =>
       toResponse(
         apiService
           .getPin(UUID.fromString(pinId))
       )(pin => Response.json(pin.toJson))
 
-    case Method.DELETE -> !! / "investigations" / id =>
+    case Method.DELETE -> !! / Prefix / "investigations" / id =>
       toResponse(apiService.delete(UUID.fromString(id)))(_ => Response.status(Status.NoContent))
   }
 
 object InvestigationRoutes:
   val layer = ZLayer.fromFunction(new InvestigationRoutes(_))
 
-final case class ErrorResponse(status: Status, problem: Problem)
+private final case class ErrorResponse(status: Status, problem: Problem)
 
 private def convertErrors(e: Throwable): ErrorResponse =
   e match

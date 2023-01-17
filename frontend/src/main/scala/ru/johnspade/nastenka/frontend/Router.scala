@@ -20,13 +20,13 @@ object Router:
   import Page.*
 
   val homeRoute: Route[HomePage.type, Unit] =
-    Route.static(HomePage, root / endOfSegments)
+    Route.static(HomePage, root / "app" / endOfSegments)
 
   val investigationRoute: Route[InvestigationPage, String] =
     Route(
       encode = (page: InvestigationPage) => page.id.toString,
       decode = (id: String) => InvestigationPage(UUID.fromString(id), investigationTitle = None),
-      pattern = root / "investigations" / segment[String] / endOfSegments
+      pattern = root / "app" / "investigations" / segment[String] / endOfSegments
     )
 
   val router = new Router[Page](

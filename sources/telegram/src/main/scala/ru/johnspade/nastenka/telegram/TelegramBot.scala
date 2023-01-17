@@ -24,7 +24,7 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService)(using 
   override def onMessage(msg: Message): Task[Unit] =
     if msg.forwardDate.isDefined && msg.from.exists(_.id == botConfig.userId) then
       inboxService.getInvestigations
-        .map { investigations =>
+        .flatMap { investigations =>
           sendMessage(
             ChatIntId(msg.chat.id),
             "Select an investigation",

@@ -1,4 +1,4 @@
-package ru.johnspade.nastenka.backend
+package ru.johnspade.nastenka.server
 
 import com.typesafe.config.ConfigFactory
 import io.getquill.*
