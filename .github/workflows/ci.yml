@@ -35,6 +35,8 @@ jobs:
           cache-dependency-path: frontend/yarn.lock
       - name: Setup yarn
         uses: borales/actions-yarn@v4
+        with:
+          cmd: "install --immutable --immutable-cache --check-cache"
       - name: Publish project
         env:
           JIB_TARGET_IMAGE_USERNAME: johnspade
