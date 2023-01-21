@@ -27,12 +27,13 @@ jobs:
           distribution: temurin
       - name: Cache SBT
         uses: coursier/cache-action@v6
-      - name: Publish project
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: yarn
           cache-dependency-path: frontend/yarn.lock
+      - name: Publish project
         uses: borales/actions-yarn@v4
         env:
           JIB_TARGET_IMAGE_USERNAME: johnspade
