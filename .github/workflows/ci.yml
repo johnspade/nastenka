@@ -36,7 +36,7 @@ jobs:
       - name: Setup yarn
         uses: borales/actions-yarn@v4
         with:
-          cmd: "install --immutable --immutable-cache --check-cache"
+          cmd: "--version"
       - name: Publish project
         env:
           JIB_TARGET_IMAGE_USERNAME: johnspade
