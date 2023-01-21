@@ -121,7 +121,8 @@ lazy val server = project
     jibBaseImage    := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
     jibOrganization := "johnspade",
     jibName         := "nastenka",
-    jibRegistry     := "ghcr.io"
+    jibRegistry     := "ghcr.io",
+    jibLabels       := Map("org.opencontainers.image.source" -> "https://github.com/johnspade/nastenka")
   )
 
 lazy val frontend = project
@@ -165,4 +166,4 @@ buildFrontend := {
 }
 
 addCommandAlias("validate", "scalafmtCheck;Test / scalafmtCheck;test")
-addCommandAlias("buildDockerContainer", ";clean;compile;buildFrontend;server/jibDockerBuild")
+addCommandAlias("publishDockerContainer", ";clean;compile;buildFrontend;server/jibImageBuild")

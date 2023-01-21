@@ -7,21 +7,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 11
+      - name: Setup JDK
         uses: actions/setup-java@v3
         with:
           java-version: 11
           distribution: temurin
-      - name: Cache sbt
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.coursier/cache/v1
-            ~/.cache/coursier/v1
-            ~/AppData/Local/Coursier/Cache/v1
-            ~/Library/Caches/Coursier/v1
-          key: ${{ runner.os }}-sbt-cache-v3-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+      - name: Cache SBT
+        uses: coursier/cache-action@v6
       - name: Validate project    
         run: sbt validate  
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: temurin
+      - name: Cache SBT
+        uses: coursier/cache-action@v6
+      - name: Publish project
+        uses: actions/setup-node@v3
+          with:
+            node-version: 18
+            cache: yarn
+            cache-dependency-path: frontend/yarn.lock
+        uses: borales/actions-yarn@v4
+        env:
+          JIB_TARGET_IMAGE_USERNAME: johnspade
+          JIB_TARGET_IMAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: sbt publishDockerContainer  
