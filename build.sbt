@@ -117,9 +117,11 @@ lazy val server = project
   .dependsOn(api, inbox, telegram, email, persistenceShared)
   .settings(commonSettings)
   .settings(
-    name         := "nastenka-server",
-    jibBaseImage := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
-    jibName      := "nastenka"
+    name            := "nastenka-server",
+    jibBaseImage    := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
+    jibOrganization := "johnspade",
+    jibName         := "nastenka",
+    jibRegistry     := "ghcr.io"
   )
 
 lazy val frontend = project
@@ -141,7 +143,6 @@ lazy val frontend = project
   )
 
 val buildFrontend = taskKey[Unit]("Build frontend")
-
 buildFrontend := {
   (frontend / Compile / fullLinkJS).value
   val yarnInstallExit = Process(
@@ -162,3 +163,6 @@ buildFrontend := {
     baseDirectory.value / "api" / "target" / s"scala-$scala3Version" / "classes" / "static"
   )
 }
+
+addCommandAlias("validate", "scalafmtCheck;Test / scalafmtCheck;test")
+addCommandAlias("buildDockerContainer", ";clean;compile;buildFrontend;server/jibDockerBuild")
