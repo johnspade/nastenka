@@ -118,7 +118,7 @@ lazy val server = project
   .settings(commonSettings)
   .settings(
     name            := "nastenka-server",
-    jibBaseImage    := "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine",
+    jibBaseImage    := "eclipse-temurin:17.0.6_10-jre-alpine",
     jibOrganization := "johnspade",
     jibName         := "nastenka",
     jibRegistry     := "ghcr.io",
