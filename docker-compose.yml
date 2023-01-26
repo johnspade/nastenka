@@ -22,7 +22,7 @@ services:
   #     MINIO_ROOT_PASSWORD: minio1337
   #   command: server --console-address ":9001" /data
   server:
-    image: registry.hub.docker.com/ru.johnspade/nastenka:latest
+    image: ghcr.io/johnspade/nastenka:latest
     restart: always
     depends_on: 
       - db

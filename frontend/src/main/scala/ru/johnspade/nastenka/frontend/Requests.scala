@@ -16,7 +16,7 @@ import scala.concurrent.Future
 object Requests:
   private val backend: SttpBackend[Future, Any] = FetchBackend()
 
-  private val baseUrl = uri"http://localhost:8080/api"
+  private val baseUrl = uri"/api"
 
   private def getRequest[A: JsonDecoder](path: Any*): EventStream[A] = {
     val request = quickRequest.get(uri"$baseUrl/$path")

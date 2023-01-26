@@ -165,5 +165,5 @@ buildFrontend := {
   )
 }
 
-addCommandAlias("validate", "scalafmtCheck;Test / scalafmtCheck;test")
-addCommandAlias("publishDockerContainer", ";clean;compile;buildFrontend;server/jibImageBuild")
+addCommandAlias("validate", ";compile;Test / compile;scalafmtCheck;test")
+addCommandAlias("publishDockerContainer", ";buildFrontend;server/jibImageBuild")
