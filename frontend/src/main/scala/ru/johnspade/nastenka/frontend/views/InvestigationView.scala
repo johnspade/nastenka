@@ -73,7 +73,7 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
           children <-- mergedInvestigation
             .map(inv => inv.pins.sortBy(pin => inv.pinsOrder.indexOf(pin.id)).map(pin => (inv, pin)))
             .split(_._2.id) { case (_, (inv, pin), pinStream) =>
-              renderPinCard(inv, pin, pinStream.map(_._2))
+              renderPinCard(inv, pin, pinStream.map(_._2).changes)
             }
         )
       ),
@@ -132,14 +132,14 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
         )
       )
 
-  private def getPinTypeIcon(pinType: PinType) =
+  private def getPinTypeIcon(pinType: String) =
     pinType match
-      case TELEGRAM_MESSAGE =>
+      case PinType.TelegramMessage =>
         img(
           cls("h-5 w-5"),
           src("/static/img/telegram_logo.svg")
         )
-      case EMAIL =>
+      case PinType.Email =>
         svg.svg(
           svg.cls("w-5 h-5"),
           svg.fill("none"),
@@ -180,11 +180,11 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
     li(
       mergedInvestigation --> currentInvestigation.writer,
       pinStream --> currentPin.writer,
-      cls("p-2 bg-white flex flex-col cursor-pointer"),
-      cls.toggle("bg-gray-200") <-- pinStream
+      cls("p-2 flex flex-col cursor-pointer"),
+      cls <-- pinStream
         .combineWith(selectedPin.signal.changes)
         .collect { case (pin, Some(selectedPin)) =>
-          pin.id == selectedPin.id
+          if pin.id == selectedPin.id then "bg-gray-200" else "bg-white"
         },
       div(
         cls("flex flex-row space-x-2 items-center"),

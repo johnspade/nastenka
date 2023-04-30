@@ -31,7 +31,7 @@ import scala.jdk.CollectionConverters.MapHasAsJava
 object Main extends ZIOAppDefault:
   private val dataSourceLive =
     ZLayer {
-      ZIO.service[DbConfig].map { dbConfig =>
+      ZIO.config(DbConfig.descriptor).map { dbConfig =>
         val dbConfigMap = Map(
           "dataSource.user"     -> dbConfig.user,
           "dataSource.password" -> dbConfig.password,
@@ -50,7 +50,7 @@ object Main extends ZIOAppDefault:
   private val program =
     for
       _         <- FlywayMigration.migrate
-      botConfig <- ZIO.service[BotConfig]
+      botConfig <- ZIO.config(BotConfig.descriptor)
       _ <- ZIO
         .serviceWithZIO[NastenkaServer](_.start)
         .zipPar {
@@ -65,21 +65,16 @@ object Main extends ZIOAppDefault:
     program.provide(
       NastenkaServer.layer,
       InvestigationRoutes.layer,
-      DbConfig.live,
       dataSourceLive,
       postgresLive,
       InvestigationRepositoryLive.layer,
-      ru.johnspade.nastenka.api.EmailConfig.live,
       ApiInvestigationRepositoryLive.layer,
       ApiInvestigationServiceLive.layer,
       InboxServiceLive.layer,
-      BotConfig.live,
       TelegramBotApi.live,
       TelegramBot.live,
       ProcessedEmailRepositoryLive.layer,
-      EmailConfig.live,
       EmailServiceLive.layer,
       EmailSourceServiceLive.layer,
-      S3Config.live,
       S3Live.layer
     )

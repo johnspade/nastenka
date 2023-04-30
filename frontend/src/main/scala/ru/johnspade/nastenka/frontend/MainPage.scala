@@ -10,7 +10,7 @@ import ru.johnspade.nastenka.models.UpdatedInvestigation
 object MainPage extends Component:
   import Page.*
 
-  private val splitter = SplitRender[Page, HtmlElement](Router.router.$currentPage)
+  private val splitter = SplitRender[Page, HtmlElement](Router.router.currentPageSignal)
     .collectSignal[InvestigationPage] { $page => new InvestigationView($page).body }
     .collectStatic(HomePage)(div())
 
@@ -76,7 +76,7 @@ object MainPage extends Component:
       cls("md:grid md:grid-cols-6 h-screen flex flex-col overflow-auto"),
       div(
         cls("md:col-span-1 flex bg-gray-100"),
-        nav(
+        navTag(
           cls("grow min-w-0"),
           div(
             cls("truncate"),
@@ -100,7 +100,7 @@ object MainPage extends Component:
               children <-- $loadedInvestigations.split(_.id) { (id, initialInvestigation, invStream) =>
                 li(
                   cls("text-lg"),
-                  cls <-- Router.router.$currentPage.map { page =>
+                  cls <-- Router.router.currentPageSignal.map { page =>
                     page match
                       case Page.InvestigationPage(selectedId, _) if id == selectedId =>
                         "bg-gray-400 text-black font-bold"
@@ -142,9 +142,9 @@ object MainPage extends Component:
               }
             ),
             contextMenu,
-            documentEvents.onClick --> { e =>
+            documentEvents(_.onClick) --> { e =>
               val menuRef = contextMenu.ref
-              if e.target.id == menuRef.id then e.preventDefault()
+              if e.target.asInstanceOf[Element].ref.id == menuRef.id then e.preventDefault()
               else showContextMenu.set(false)
             }
           )
@@ -152,7 +152,7 @@ object MainPage extends Component:
       ),
       div(
         cls("md:col-span-5 p-4 grow overflow-auto"),
-        child <-- splitter.$view
+        child <-- splitter.signal
       ),
       div(
         cls := "fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center z-50",

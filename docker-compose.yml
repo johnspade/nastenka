@@ -22,7 +22,7 @@ services:
   #     MINIO_ROOT_PASSWORD: minio1337
   #   command: server --console-address ":9001" /data
   server:
-    image: ghcr.io/johnspade/nastenka:latest
+    image: ghcr.io/johnspade/nastenka:${NASTENKA_VERSION}
     restart: always
     depends_on: 
       - db
@@ -30,7 +30,6 @@ services:
       - ${PORT:-8080}:8080
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/nastenka
-      - PORT=8080
       - BOT_USER_ID
       - BOT_TOKEN
       - EMAIL_USER
@@ -44,5 +43,5 @@ services:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
 
-volumes:
-  minio: {}
+# volumes:
+#   minio: {}

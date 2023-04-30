@@ -13,7 +13,4 @@ import scala.collection.Factory
 
 object codecs {
   inline given SchemaMeta[InvestigationPin] = schemaMeta[InvestigationPin]("investigations_pins")
-
-  given MappedEncoding[PinType, String] = MappedEncoding[PinType, String](_.toString())
-  given MappedEncoding[String, PinType] = MappedEncoding[String, PinType](s => PinType.valueOf(s))
 }

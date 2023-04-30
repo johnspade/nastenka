@@ -42,7 +42,7 @@ final class EmailSourceServiceLive(
         (for
           uuid <- ZIO.attempt(UUID.randomUUID())
           pin = NewPin(
-            PinType.EMAIL,
+            PinType.Email,
             sender = from,
             title = Some(subject),
             html = htmlBody,

@@ -64,4 +64,9 @@ class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository,
   override def delete(id: UUID): ZIO[Any, Nothing, Unit] = investigationRepo.delete(id).orDie
 
 object ApiInvestigationServiceLive:
-  val layer = ZLayer.fromFunction(new ApiInvestigationServiceLive(_, _))
+  val layer = ZLayer(
+    for
+      investigationRepo <- ZIO.service[ApiInvestigationRepository]
+      emailConfig       <- ZIO.config(EmailConfig.descriptor)
+    yield new ApiInvestigationServiceLive(investigationRepo, emailConfig)
+  )

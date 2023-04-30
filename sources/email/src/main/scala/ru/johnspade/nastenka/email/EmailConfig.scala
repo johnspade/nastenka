@@ -1,14 +1,16 @@
 package ru.johnspade.nastenka.email
 
-import zio.config.*, ConfigDescriptor.*, ConfigSource.*
 import emil.MailConfig
 import emil.SSLType
+import zio.Config
+
+import Config.*
 
 case class EmailConfig(url: String, user: String, password: String, nastenkaAlias: String, nastenkaFolder: String):
   val imapConfig = MailConfig(url, user, password, SSLType.SSL)
 
 object EmailConfig:
-  private val descriptor =
+  val descriptor =
     (string("EMAIL_URL") zip
       string("EMAIL_USER") zip
       string("EMAIL_PASSWORD") zip
@@ -17,5 +19,3 @@ object EmailConfig:
       .map { case (url, user, password, nastenkaAlias, nastenkaFolder) =>
         EmailConfig(url, user, password, nastenkaAlias, nastenkaFolder)
       }
-
-  val live = ZConfig.fromSystemEnv(descriptor).orDie

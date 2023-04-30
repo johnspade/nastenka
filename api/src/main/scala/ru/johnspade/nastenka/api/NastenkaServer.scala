@@ -1,7 +1,6 @@
 package ru.johnspade.nastenka.api
 
-import zhttp.http.*
-import zhttp.service.Server
+import zio.http.*
 import zio.*
 import zio.stream.ZStream
 
@@ -10,7 +9,7 @@ import java.io.IOException
 class NastenkaServer(investigationRoutes: InvestigationRoutes):
   private val frontendRoutes: Http[Any, Throwable, Request, Response] = Http.collect[Request] {
     case Method.GET -> !! =>
-      Response.redirect("/app", isPermanent = true)
+      Response.redirect(URL(!! / "app"), isPermanent = true)
 
     case Method.GET -> "" /: "app" /: path =>
       Response(
@@ -49,7 +48,7 @@ class NastenkaServer(investigationRoutes: InvestigationRoutes):
   def start: ZIO[Any, Throwable, Unit] =
     for {
       port <- System.envOrElse("PORT", "8080").map(_.toInt)
-      _    <- Server.start(port, allRoutes)
+      _    <- Server.serve(allRoutes.withDefaultErrorResponse).provide(Server.defaultWithPort(port))
     } yield ()
 
 object NastenkaServer:

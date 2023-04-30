@@ -9,6 +9,6 @@ import java.net.URI
 object S3Live:
   val layer = ZLayer {
     ZIO
-      .service[S3Config]
+      .config(S3Config.descriptor)
       .map(config => zio.s3.liveZIO(Region.US_EAST_1, env, uriEndpoint = Some(URI(config.endpointUrl))))
   }.flatten

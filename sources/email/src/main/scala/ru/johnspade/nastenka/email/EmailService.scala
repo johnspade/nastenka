@@ -122,4 +122,8 @@ final class EmailServiceLive(emailConfig: EmailConfig) extends EmailService:
 end EmailServiceLive
 
 object EmailServiceLive:
-  val layer = ZLayer.fromFunction(new EmailServiceLive(_))
+  val layer = ZLayer(
+    ZIO
+      .config(EmailConfig.descriptor)
+      .map(emailConfig => new EmailServiceLive(emailConfig))
+  )

@@ -6,7 +6,7 @@ import ru.johnspade.nastenka.models.InvestigationsResponse
 import ru.johnspade.nastenka.models.NewInvestigation
 import ru.johnspade.nastenka.models.Problem
 import ru.johnspade.nastenka.models.UpdatedInvestigation
-import zhttp.http.*
+import zio.http.*
 import zio.*
 import zio.json.*
 
@@ -77,10 +77,11 @@ def toResponse[R, E <: Throwable, A](zio: ZIO[R, E, A])(f: A => Response): ZIO[R
   zio
     .mapError { e =>
       val errorResponse = convertErrors(e)
-      Response
-        .json(errorResponse.problem.toJson)
-        .setStatus(errorResponse.status)
-        .withContentType("application/problem+json")
+      Response(
+        errorResponse.status,
+        Headers("Content-Type", "application/problem+json"),
+        Body.fromString(errorResponse.problem.toJson)
+      )
     }
     .map(f)
     .merge

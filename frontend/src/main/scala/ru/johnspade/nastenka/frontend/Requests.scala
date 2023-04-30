@@ -11,12 +11,15 @@ import sttp.client3.*
 import zio.json.*
 
 import java.util.UUID
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 object Requests:
   private val backend: SttpBackend[Future, Any] = FetchBackend()
 
   private val baseUrl = uri"/api"
+
+  private given ExecutionContext = scala.concurrent.ExecutionContext.global
 
   private def getRequest[A: JsonDecoder](path: Any*): EventStream[A] = {
     val request = quickRequest.get(uri"$baseUrl/$path")

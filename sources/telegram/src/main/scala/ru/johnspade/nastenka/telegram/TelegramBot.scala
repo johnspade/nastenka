@@ -58,7 +58,7 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService)(using 
       for
         _ <- inboxService.addPin(
           investigationId,
-          NewPin(PinType.TELEGRAM_MESSAGE, text = text.some, sender = senderName)
+          NewPin(PinType.TelegramMessage, text = text.some, sender = senderName)
         )
         _ <- answerCallbackQuery(query.id).exec
         _ <- sendMessage(ChatIntId(msg.chat.id), "Added a new pin").exec
@@ -72,7 +72,7 @@ object TelegramBot:
   val live = ZLayer(
     for
       api          <- ZIO.service[TelegramBotApi]
-      botConfig    <- ZIO.service[BotConfig]
+      botConfig    <- ZIO.config(BotConfig.descriptor)
       inboxService <- ZIO.service[InboxService]
     yield new TelegramBot(botConfig, inboxService)(using api)
   )

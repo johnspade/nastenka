@@ -1,15 +1,16 @@
 package ru.johnspade.nastenka.api
 
-import zio.IO
-import zio.config.ConfigDescriptor.*
+import zio.Config
 import zio.config.*
 
 import java.net.URI
 
+import Config.*
+
 final case class DbConfig(driver: String, url: String, user: String, password: String)
 
 object DbConfig:
-  val dbConfig: ConfigDescriptor[DbConfig] =
+  val descriptor: Config[DbConfig] =
     string("DATABASE_URL")
       .map { url =>
         val dbUri    = new URI(url)
@@ -21,5 +22,3 @@ object DbConfig:
           password = userInfo(1)
         )
       }
-
-  val live = ZConfig.fromSystemEnv(dbConfig).orDie

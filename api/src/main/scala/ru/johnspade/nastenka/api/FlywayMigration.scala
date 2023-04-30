@@ -4,8 +4,8 @@ import org.flywaydb.core.Flyway
 import zio.*
 
 object FlywayMigration:
-  val migrate: RIO[DbConfig, Unit] =
-    ZIO.serviceWithZIO[DbConfig] { cfg =>
+  val migrate: ZIO[Any, Throwable, Unit] =
+    ZIO.config(DbConfig.descriptor).flatMap { cfg =>
       ZIO.attemptBlocking {
         Flyway
           .configure()

@@ -35,7 +35,7 @@ object Router:
     serializePage = page => page.toJson,
     deserializePage = pageStr => pageStr.fromJson[Page].getOrElse(HomePage)
   )(
-    $popStateEvent = windowEvents.onPopState,
+    popStateEvents = windowEvents(_.onPopState),
     owner = unsafeWindowOwner
   )
 

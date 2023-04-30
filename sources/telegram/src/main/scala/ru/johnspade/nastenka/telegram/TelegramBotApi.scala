@@ -13,7 +13,7 @@ object TelegramBotApi:
   val live =
     ZLayer.scoped {
       (for
-        cfg        <- ZIO.service[BotConfig]
+        cfg        <- ZIO.config(BotConfig.descriptor)
         httpClient <- BlazeClientBuilder[Task].resource.toScopedZIO
         botApi = BotApi[Task](httpClient, s"https://api.telegram.org/bot${cfg.token}")
       yield botApi).orDie

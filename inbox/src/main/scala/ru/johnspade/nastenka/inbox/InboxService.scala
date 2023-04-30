@@ -54,4 +54,10 @@ final class InboxServiceLive(investigationRepo: InvestigationRepository, s3: S3,
     )(4)
 
 object InboxServiceLive:
-  val layer = ZLayer.fromFunction(new InboxServiceLive(_, _, _))
+  val layer = ZLayer(
+    for
+      investigationRepo <- ZIO.service[InvestigationRepository]
+      s3                <- ZIO.service[S3]
+      s3Config          <- ZIO.config(S3Config.descriptor)
+    yield new InboxServiceLive(investigationRepo, s3, s3Config)
+  )

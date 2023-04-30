@@ -8,7 +8,7 @@ import java.time.Instant
 final case class Pin(
     id: UUID,
     createdAt: Instant,
-    pinType: PinType,
+    pinType: String,
     title: Option[String],
     text: Option[String],
     sender: Option[String],
@@ -19,7 +19,7 @@ object Pin:
   given jsonCodec: JsonCodec[Pin] = DeriveJsonCodec.gen[Pin]
 
 final case class NewPin(
-    pinType: PinType,
+    pinType: String,
     title: Option[String] = None,
     text: Option[String] = None,
     sender: Option[String] = None,

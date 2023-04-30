@@ -17,7 +17,7 @@ object InvestigationFullModel:
 
 final case class PinModel(
     id: UUID,
-    pinType: PinType,
+    pinType: String,
     title: Option[String],
     text: Option[String],
     sender: Option[String],
