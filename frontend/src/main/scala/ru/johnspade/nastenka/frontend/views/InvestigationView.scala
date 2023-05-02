@@ -73,12 +73,12 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
           children <-- mergedInvestigation
             .map(inv => inv.pins.sortBy(pin => inv.pinsOrder.indexOf(pin.id)).map(pin => (inv, pin)))
             .split(_._2.id) { case (_, (inv, pin), pinStream) =>
-              renderPinCard(inv, pin, pinStream.map(_._2).changes)
+              renderPinCard(inv, pin, pinStream.map(_._2))
             }
         )
       ),
       div(
-        cls("md:col-span-3 flex flex-col grow p-2 md:px-4 space-y-2"),
+        cls("md:col-span-3 flex flex-col grow p-2 md:px-4 space-y-2 overflow-auto"),
         children <-- selectedPin.signal.map {
           case Some(pin) =>
             List(
@@ -117,10 +117,12 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
           idAttr("pin-html"),
           cls("grow"),
           iframe(
-            cls("w-full h-full"),
+            cls("w-full"),
             onLoad --> { e =>
               val f = e.target.asInstanceOf[HTMLIFrameElement]
               f.contentWindow.document.body.innerHTML = htmlBody
+              f.style.height = "0px"
+              f.style.height = s"${f.contentWindow.document.body.scrollHeight}px"
             }
           )
         )
@@ -173,66 +175,61 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
   private def renderPinCard(
       initialInvestigation: InvestigationFullModel,
       initialPin: PinModel,
-      pinStream: EventStream[PinModel]
+      pinSignal: Signal[PinModel]
   ) =
     val currentInvestigation = Var(initialInvestigation)
     val currentPin           = Var(initialPin)
     li(
       mergedInvestigation --> currentInvestigation.writer,
-      pinStream --> currentPin.writer,
+      pinSignal --> currentPin.writer,
       cls("p-2 flex flex-col cursor-pointer"),
-      cls <-- pinStream
-        .combineWith(selectedPin.signal.changes)
-        .collect { case (pin, Some(selectedPin)) =>
-          if pin.id == selectedPin.id then "bg-gray-200" else "bg-white"
+      cls <-- pinSignal
+        .combineWithFn(selectedPin) { case (pin, selectedPinOpt) =>
+          if selectedPinOpt.exists(_.id == pin.id) then "bg-gray-200" else "bg-white"
         },
       div(
         cls("flex flex-row space-x-2 items-center"),
         div(
           cls("shrink-0"),
-          child <-- pinStream.map(pin => getPinTypeIcon(pin.pinType))
+          child <-- pinSignal.map(pin => getPinTypeIcon(pin.pinType))
         ),
         p(
           cls("text-gray-500"),
-          child.text <-- pinStream.map(_.sender.getOrElse(""))
+          child.text <-- pinSignal.map(_.sender.getOrElse(""))
         )
       ),
       div(
         cls("text-xl line-clamp-1"),
-        child.text <-- pinStream.map(_.title.getOrElse("(no title)"))
+        child.text <-- pinSignal.map(_.title.getOrElse("(no title)"))
       ),
       div(
         cls("line-clamp-2"),
         p(
-          child.text <-- pinStream.map(_.text.getOrElse(""))
+          child.text <-- pinSignal.map(_.text.getOrElse(""))
         )
       ),
-      composeEvents(onClick) {
-        _.combineWith(pinStream).map(_._2)
-      } --> { pin => selectedPin.set(Some(pin)) },
+      onClick.compose(_.withCurrentValueOf(pinSignal).map(_._2)) --> { pin =>
+        selectedPin.set(Some(pin))
+      },
       draggable(true),
       onDragStart --> { e =>
         e.dataTransfer.effectAllowed = "move"
         e.dataTransfer.setData("text/plain", null)
       },
-      composeEvents(onDragStart) {
-        _.combineWith(pinStream)
-      } --> { case (e, pin) =>
+      onDragStart.compose(_.withCurrentValueOf(pinSignal)) --> { case (e, pin) =>
         val target = e.target.asInstanceOf[Element]
         draggedElement.set(Some((target, currentInvestigation.now().pinsOrder.indexOf(pin))))
       },
-      composeEvents(onDragEnd) {
-        _.map { e =>
-          val target   = e.target.asInstanceOf[Element]
-          val newIndex = target.parentNode.childNodes.filter(_.nodeName == "LI").indexOf(target)
-          val inv      = currentInvestigation.now()
-          val pin      = currentPin.now()
-          (
-            inv,
-            pin,
-            draggedElement.now().map(_._2).getOrElse(inv.pinsOrder.indexOf(pin))
-          )
-        }
+      onDragEnd.map { e =>
+        val target   = e.target.asInstanceOf[Element]
+        val newIndex = target.parentNode.childNodes.filter(_.nodeName == "LI").indexOf(target)
+        val inv      = currentInvestigation.now()
+        val pin      = currentPin.now()
+        (
+          inv,
+          pin,
+          draggedElement.now().map(_._2).getOrElse(inv.pinsOrder.indexOf(pin))
+        )
       } --> pinMovedBus.writer,
       onDragOver.preventDefault --> { e =>
         draggedElement

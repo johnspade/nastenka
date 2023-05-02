@@ -73,7 +73,7 @@ object MainPage extends Component:
     div(
       deleteInvestigationStream --> loadInvestigationsEventBus.writer,
       loadInvestigationsAfterSave --> loadInvestigationsEventBus.writer,
-      cls("md:grid md:grid-cols-6 h-screen flex flex-col overflow-auto"),
+      cls("md:grid md:grid-cols-6 md:h-screen flex flex-col overflow-auto"),
       div(
         cls("md:col-span-1 flex bg-gray-100"),
         navTag(
@@ -144,7 +144,9 @@ object MainPage extends Component:
             contextMenu,
             documentEvents(_.onClick) --> { e =>
               val menuRef = contextMenu.ref
-              if e.target.asInstanceOf[Element].ref.id == menuRef.id then e.preventDefault()
+              val target  = e.target
+              if target.isInstanceOf[Element] && target.asInstanceOf[Element].ref.id == menuRef.id then
+                e.preventDefault()
               else showContextMenu.set(false)
             }
           )

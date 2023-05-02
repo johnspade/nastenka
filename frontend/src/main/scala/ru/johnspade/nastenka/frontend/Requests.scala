@@ -17,7 +17,7 @@ import scala.concurrent.Future
 object Requests:
   private val backend: SttpBackend[Future, Any] = FetchBackend()
 
-  private val baseUrl = uri"/api"
+  private val baseUrl = uri"http://localhost:8080/api"
 
   private given ExecutionContext = scala.concurrent.ExecutionContext.global
 
