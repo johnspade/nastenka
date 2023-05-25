@@ -12,7 +12,8 @@ final case class Pin(
     title: Option[String],
     text: Option[String],
     sender: Option[String],
-    html: Option[String]
+    html: Option[String],
+    images: List[String]
 )
 
 object Pin:
@@ -23,5 +24,6 @@ final case class NewPin(
     title: Option[String] = None,
     text: Option[String] = None,
     sender: Option[String] = None,
-    html: Option[String] = None
+    html: Option[String] = None,
+    images: List[String] = List.empty
 )

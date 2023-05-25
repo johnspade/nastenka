@@ -30,16 +30,17 @@ object Dependencies {
   val zioLogging = "dev.zio" %% "zio-logging-slf4j" % V.zioLogging
   val zioNio = "dev.zio" %% "zio-nio" % V.zioNio exclude ("org.scala-lang.modules", "scala-collection-compat_2.13")
   val zioS3  = "dev.zio" %% "zio-s3"  % V.zioS3 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13")
-  val logback         = "ch.qos.logback"         % "logback-classic"  % V.logback
-  val flyway          = "org.flywaydb"           % "flyway-core"      % V.flyway
-  val postgresql      = "org.postgresql"         % "postgresql"       % V.postgresql
-  val quill           = "io.getquill"           %% "quill-jdbc-zio"   % V.zioQuill
-  val ducktape        = "io.github.arainko"     %% "ducktape"         % V.ducktape
-  val telegramiumCore = "io.github.apimorphism" %% "telegramium-core" % V.telegramium
-  val telegramiumHigh = "io.github.apimorphism" %% "telegramium-high" % V.telegramium
-  val zioInteropCats  = "dev.zio"               %% "zio-interop-cats" % V.zioCats
-  val emilCommon      = "com.github.eikek"      %% "emil-common"      % V.emil
-  val emilJavamail    = "com.github.eikek"      %% "emil-javamail"    % V.emil
+  val logback         = "ch.qos.logback"                 % "logback-classic"  % V.logback
+  val flyway          = "org.flywaydb"                   % "flyway-core"      % V.flyway
+  val postgresql      = "org.postgresql"                 % "postgresql"       % V.postgresql
+  val quill           = "io.getquill"                   %% "quill-jdbc-zio"   % V.zioQuill
+  val ducktape        = "io.github.arainko"             %% "ducktape"         % V.ducktape
+  val telegramiumCore = "io.github.apimorphism"         %% "telegramium-core" % V.telegramium
+  val telegramiumHigh = "io.github.apimorphism"         %% "telegramium-high" % V.telegramium
+  val zioInteropCats  = "dev.zio"                       %% "zio-interop-cats" % V.zioCats
+  val emilCommon      = "com.github.eikek"              %% "emil-common"      % V.emil
+  val emilJavamail    = "com.github.eikek"              %% "emil-javamail"    % V.emil
+  val sttpClientZio   = "com.softwaremill.sttp.client3" %% "zio"              % V.sttpClient
 
   val zioTest    = "dev.zio" %% "zio-test"     % V.zio % Test
   val zioTestSbt = "dev.zio" %% "zio-test-sbt" % V.zio % Test

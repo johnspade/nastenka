@@ -22,6 +22,7 @@ import ru.johnspade.nastenka.persistence.InvestigationRepositoryLive
 import ru.johnspade.nastenka.telegram.BotConfig
 import ru.johnspade.nastenka.telegram.TelegramBot
 import ru.johnspade.nastenka.telegram.TelegramBotApi
+import sttp.client3.httpclient.zio.HttpClientZioBackend
 import zio.*
 import zio.interop.catz.*
 import zio.stream.ZSink
@@ -76,5 +77,6 @@ object Main extends ZIOAppDefault:
       ProcessedEmailRepositoryLive.layer,
       EmailServiceLive.layer,
       EmailSourceServiceLive.layer,
-      S3Live.layer
+      S3Live.layer,
+      HttpClientZioBackend.layer()
     )

@@ -10,38 +10,38 @@ services:
       - POSTGRES_DB=nastenka
     ports:
       - ${DB_PORT:-5432}:5432
-  # minio:
-  #   image: minio/minio
-  #   ports:
-  #     - "9000:9000"
-  #     - "9001:9001"
-  #   volumes:
-  #     - minio:/data
-  #   environment:
-  #     MINIO_ROOT_USER: minio
-  #     MINIO_ROOT_PASSWORD: minio1337
-  #   command: server --console-address ":9001" /data
-  server:
-    image: ghcr.io/johnspade/nastenka:${NASTENKA_VERSION}
-    restart: always
-    depends_on: 
-      - db
+  minio:
+    image: minio/minio
     ports:
-      - ${PORT:-8080}:8080
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio:/data
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/nastenka
-      - BOT_USER_ID
-      - BOT_TOKEN
-      - EMAIL_USER
-      - EMAIL_PASSWORD
-      - EMAIL_FOLDER
-      - EMAIL_NASTENKA_ALIAS
-      - EMAIL_URL
-      - S3_ENDPOINT_URL
-      - S3_BUCKET_NAME
-      - AWS_REGION
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio1337
+    command: server --console-address ":9001" /data
+  # server:
+  #   image: ghcr.io/johnspade/nastenka:${NASTENKA_VERSION}
+  #   restart: always
+  #   depends_on: 
+  #     - db
+  #   ports:
+  #     - ${PORT:-8080}:8080
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@db:5432/nastenka
+  #     - BOT_USER_ID
+  #     - BOT_TOKEN
+  #     - EMAIL_USER
+  #     - EMAIL_PASSWORD
+  #     - EMAIL_FOLDER
+  #     - EMAIL_NASTENKA_ALIAS
+  #     - EMAIL_URL
+  #     - S3_ENDPOINT_URL
+  #     - S3_BUCKET_NAME
+  #     - AWS_REGION
+  #     - AWS_ACCESS_KEY_ID
+  #     - AWS_SECRET_ACCESS_KEY
 
-# volumes:
-#   minio: {}
+volumes:
+  minio: {}

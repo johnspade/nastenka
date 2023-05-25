@@ -102,7 +102,14 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
                   pin.sender.getOrElse("")
                 )
               ),
-              renderContent(pin)
+              renderContent(pin),
+              div(
+                pin.images.map(k => s"http://localhost:9000/nastenka/$k").map { link =>
+                  img(
+                    src(link)
+                  )
+                }
+              )
             )
           case None => List(emptyNode)
         }
