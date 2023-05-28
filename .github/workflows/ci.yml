@@ -38,7 +38,7 @@ jobs:
         run: echo "::set-output name=version::$(sbt -Dsbt.supershell=false -error 'print frontend/version')"
 
       - name: Compile frontend   
-        run: sbt frontend/compile
+        run: sbt 'frontend / Compile / fullLinkJS'
 
       - name: Build and push frontend Docker image
         uses: docker/build-push-action@v4
