@@ -59,27 +59,14 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
       text <- forwardedMsg.text.orElse(forwardedMsg.caption)
     yield {
       for
-        randomUUID <- ZIO.randomWith(_.nextUUID)
-        fileKey = randomUUID.toString() + ".jpg"
-        _ <- ZIO
-          .foreach(forwardedMsg.photo.lastOption) { photo =>
-            getFile(photo.fileId).exec
-              .flatMap { file =>
-                basicRequest
-                  .get(uri"https://api.telegram.org/file/bot${botConfig.token}/${file.filePath}")
-                  .response(
-                    asStream(ZioStreams)(stream => inboxService.saveFile(fileKey, "image/jpeg", stream))
-                  )
-                  .send(sttpClient)
-              }
-          }
+        savedPhotoOpt <- savePhotoIfPresent(forwardedMsg)
         _ <- inboxService.addPin(
           investigationId,
           NewPin(
             PinType.TelegramMessage,
             text = text.some,
             sender = senderName,
-            images = forwardedMsg.photo.lastOption.map(_ => fileKey).toList
+            images = savedPhotoOpt.toList
           )
         )
         _ <- answerCallbackQuery(query.id).exec
@@ -87,6 +74,22 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
       yield ()
     })
       .getOrElse(ZIO.unit)
+
+  private def savePhotoIfPresent(message: Message) =
+    ZIO
+      .foreach(message.photo.lastOption) { photo =>
+        for
+          randomUUID <- ZIO.randomWith(_.nextUUID)
+          fileKey = randomUUID.toString() + ".jpg"
+          file <- getFile(photo.fileId).exec
+          _ <- basicRequest
+            .get(uri"https://api.telegram.org/file/bot${botConfig.token}/${file.filePath}")
+            .response(
+              asStream(ZioStreams)(stream => inboxService.saveFile(fileKey, "image/jpeg", stream))
+            )
+            .send(sttpClient)
+        yield fileKey
+      }
 
 end TelegramBot
 

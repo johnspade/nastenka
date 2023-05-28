@@ -25,6 +25,6 @@ export default ({ mode }) => {
                 'stylesheets': resolve(__dirname, './src/main/static/stylesheets'),
             }
         },
-        base: "/static/"
+        base: "/app/"
     }
 }

@@ -119,9 +119,9 @@ lazy val server = project
   .settings(commonSettings)
   .settings(
     name            := "nastenka-server",
-    jibBaseImage    := "eclipse-temurin:17.0.6_10-jre-alpine",
+    jibBaseImage    := "eclipse-temurin:17.0.7_7-jre",
     jibOrganization := "johnspade",
-    jibName         := "nastenka",
+    jibName         := "nastenka-backend",
     jibRegistry     := "ghcr.io",
     jibLabels       := Map("org.opencontainers.image.source" -> "https://github.com/johnspade/nastenka")
   )
@@ -144,27 +144,5 @@ lazy val frontend = project
     )
   )
 
-val buildFrontend = taskKey[Unit]("Build frontend")
-buildFrontend := {
-  (frontend / Compile / fullLinkJS).value
-  val yarnInstallExit = Process(
-    "yarn" :: "install" :: "--immutable" :: "--immutable-cache" :: "--check-cache" :: Nil,
-    cwd = baseDirectory.value / "frontend"
-  ).run().exitValue()
-  if (yarnInstallExit > 0) {
-    throw new IllegalStateException(s"yarn install failed. See above for reason")
-  }
-
-  val buildExit = Process("yarn" :: "build" :: Nil, cwd = baseDirectory.value / "frontend").run().exitValue()
-  if (buildExit > 0) {
-    throw new IllegalStateException(s"Building frontend failed. See above for reason")
-  }
-
-  IO.copyDirectory(
-    baseDirectory.value / "frontend" / "dist",
-    baseDirectory.value / "api" / "target" / s"scala-$scala3Version" / "classes" / "static"
-  )
-}
-
 addCommandAlias("validate", ";compile;Test/compile;scalafmtCheck;Test/scalafmtCheck;test")
-addCommandAlias("publishDockerContainer", ";buildFrontend;server/jibImageBuild")
+addCommandAlias("publishDockerContainer", ";server/jibImageBuild")
