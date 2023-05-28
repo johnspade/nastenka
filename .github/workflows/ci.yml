@@ -37,6 +37,9 @@ jobs:
         id: version
         run: echo "::set-output name=version::$(sbt -Dsbt.supershell=false -error 'print frontend/version')"
 
+      - name: Compile frontend   
+        run: sbt frontend/compile
+
       - name: Build and push frontend Docker image
         uses: docker/build-push-action@v4
         with:
