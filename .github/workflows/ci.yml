@@ -35,7 +35,10 @@ jobs:
 
       - name: Get sbt-dynver version
         id: version
-        run: echo "version=$(sbt -Dsbt.supershell=false -error ''print frontend/version'')" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(sbt -Dsbt.ci=true -Dsbt.supershell=false -Dsbt.color=false -Dsbt.log.noformat=true -error "print frontend/version")
+          echo ${VERSION}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Compile frontend   
         run: sbt 'frontend / Compile / fullLinkJS'
