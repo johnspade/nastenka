@@ -35,7 +35,7 @@ jobs:
 
       - name: Get sbt-dynver version
         id: version
-        run: echo "::set-output name=version::$(sbt -Dsbt.supershell=false -error 'print frontend/version')"
+        run: echo "version=$(sbt -Dsbt.supershell=false -error 'print frontend/version')" >> $GITHUB_OUTPUT
 
       - name: Compile frontend   
         run: sbt 'frontend / Compile / fullLinkJS'
@@ -55,7 +55,7 @@ jobs:
           push: true
           tags: ghcr.io/johnspade/nastenka-frontend:${{ steps.version.outputs.version }}
           cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
 
       - name: Move cache
         run: |
