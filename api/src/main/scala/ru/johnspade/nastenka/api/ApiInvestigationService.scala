@@ -5,6 +5,7 @@ import ru.johnspade.nastenka.errors.InvestigationNotFound
 import ru.johnspade.nastenka.models.Investigation
 import ru.johnspade.nastenka.models.InvestigationFullModel
 import ru.johnspade.nastenka.models.NewInvestigation
+import ru.johnspade.nastenka.models.Pin
 import ru.johnspade.nastenka.models.PinModel
 import ru.johnspade.nastenka.models.UpdatedInvestigation
 import zio.*
@@ -24,8 +25,15 @@ trait ApiInvestigationService:
 
   def delete(id: UUID): ZIO[Any, Nothing, Unit]
 
-class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository, emailConfig: EmailConfig)
-    extends ApiInvestigationService:
+class ApiInvestigationServiceLive(
+    investigationRepo: ApiInvestigationRepository,
+    emailConfig: EmailConfig,
+    s3Config: S3PublicConfig
+) extends ApiInvestigationService:
+  private val pinModelTransformer = Transformer
+    .define[Pin, PinModel]
+    .build(Field.computed(_.images, _.images.map(fileKey => s"${s3Config.publicBucketUrl}/$fileKey")))
+
   override def getAll: ZIO[Any, Nothing, List[Investigation]] =
     investigationRepo.getAll.orDie
 
@@ -37,7 +45,10 @@ class ApiInvestigationServiceLive(investigationRepo: ApiInvestigationRepository,
       .refineToOrDie[InvestigationNotFound]
       .map(
         _.into[InvestigationFullModel]
-          .transform(Field.const(_.email, s"$username+$id@$domain"))
+          .transform(
+            Field.const(_.email, s"$username+$id@$domain"),
+            Field.computed(_.pins, _.pins.map(pinModelTransformer.transform))
+          )
       )
 
   override def create(newInvestigation: NewInvestigation): ZIO[Any, Nothing, Investigation] =
@@ -68,5 +79,6 @@ object ApiInvestigationServiceLive:
     for
       investigationRepo <- ZIO.service[ApiInvestigationRepository]
       emailConfig       <- ZIO.config(EmailConfig.descriptor)
-    yield new ApiInvestigationServiceLive(investigationRepo, emailConfig)
+      s3PublicConfig    <- ZIO.config(S3PublicConfig.descriptor)
+    yield new ApiInvestigationServiceLive(investigationRepo, emailConfig, s3PublicConfig)
   )

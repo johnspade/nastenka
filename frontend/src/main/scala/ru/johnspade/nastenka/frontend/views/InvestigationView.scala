@@ -104,7 +104,7 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
               ),
               renderContent(pin),
               div(
-                pin.images.map(k => s"http://localhost:9000/nastenka/$k").map { link =>
+                pin.images.map { link =>
                   img(
                     src(link)
                   )
