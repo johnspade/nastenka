@@ -146,7 +146,7 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
       case PinType.TelegramMessage =>
         img(
           cls("h-5 w-5"),
-          src("/static/img/telegram_logo.svg")
+          src("/img/telegram_logo.svg")
         )
       case PinType.Email =>
         svg.svg(

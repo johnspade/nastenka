@@ -14,10 +14,14 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import scalajs.js
+
 object Requests:
+  private val apiUrl = js.`import`.meta.env.VITE_API_URL.asInstanceOf[js.UndefOr[String]].toOption.getOrElse("")
+
   private val backend: SttpBackend[Future, Any] = FetchBackend()
 
-  private val baseUrl = uri"http://localhost:8080/api"
+  private val baseUrl = uri"$apiUrl/api"
 
   private given ExecutionContext = scala.concurrent.ExecutionContext.global
 
