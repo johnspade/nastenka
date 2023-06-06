@@ -10,6 +10,7 @@ import sttp.client3.*
 import telegramium.bots.CallbackQuery
 import telegramium.bots.ChatIntId
 import telegramium.bots.Message
+import telegramium.bots.*
 import telegramium.bots.high.Api
 import telegramium.bots.high.LongPollBot
 import telegramium.bots.high.implicits.*
@@ -57,6 +58,8 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
             .map(u => u.firstName + u.lastName.map(" " + _).getOrElse(""))
         }
       text <- forwardedMsg.text.orElse(forwardedMsg.caption)
+      messageEntities = forwardedMsg.text.map(_ => forwardedMsg.entities).getOrElse(forwardedMsg.captionEntities)
+      html            = formatMessageWithEntities(text, messageEntities)
     yield {
       for
         savedPhotoOpt <- savePhotoIfPresent(forwardedMsg)
@@ -65,6 +68,7 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
           NewPin(
             PinType.TelegramMessage,
             text = text.some,
+            html = html.some,
             sender = senderName,
             images = savedPhotoOpt.toList
           )
@@ -74,6 +78,45 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
       yield ()
     })
       .getOrElse(ZIO.unit)
+
+  private def formatMessageWithEntities(message: String, entities: List[MessageEntity]): String = {
+    val builder = new StringBuilder(message)
+
+    val sortedEntities = entities.sortBy(e => -e.offset)
+
+    sortedEntities.foreach { entity =>
+      val start      = entity.offset
+      val end        = start + entity.length
+      val entityText = builder.substring(start, end)
+
+      val (tagStart, tagEnd) = entity match {
+        case _: MentionMessageEntity          => ("", "")
+        case _: CashtagMessageEntity          => ("$", "")
+        case _: CodeMessageEntity             => ("<code>", "</code>")
+        case _: BotCommandMessageEntity       => ("/", "")
+        case _: CustomEmojiMessageEntity      => ("", "")
+        case _: SpoilerMessageEntity          => ("<s>", "</s>")
+        case _: EmailMessageEntity            => ("", "")
+        case _: BoldMessageEntity             => ("<b>", "</b>")
+        case _: PreMessageEntity              => ("<pre>", "</pre>")
+        case _: ItalicMessageEntity           => ("<i>", "</i>")
+        case _: StrikethroughMessageEntity    => ("<s>", "</s>")
+        case _: UnderlineMessageEntity        => ("<u>", "</u>")
+        case _: HashtagMessageEntity          => ("#", "")
+        case _: TextMentionMessageEntity      => ("", "")
+        case TextLinkMessageEntity(_, _, url) => (s"""<a href="$url">""", "</a>")
+        case _: UrlMessageEntity              => (s"""<a href="$entityText">""", "</a>")
+        case _: PhoneNumberMessageEntity      => ("", "")
+      }
+
+      builder.insert(end, tagEnd)
+      builder.insert(start, tagStart)
+    }
+
+    val formattedMessage = builder.toString.replace("\n", "<br>")
+
+    formattedMessage
+  }
 
   private def savePhotoIfPresent(message: Message) =
     ZIO
