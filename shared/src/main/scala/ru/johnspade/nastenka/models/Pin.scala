@@ -13,7 +13,8 @@ final case class Pin(
     text: Option[String],
     sender: Option[String],
     html: Option[String],
-    images: List[String]
+    images: List[String],
+    deleted: Boolean = false
 )
 
 object Pin:

@@ -45,7 +45,7 @@ object MainPage extends Component:
   private val newInvestigationTitle = Var("")
   private val investigationTitle    = Var("")
 
-  private val contextMenu = div(
+  private val investigationContextMenu = div(
     cls("absolute z-50 bg-white rounded shadow-xl py-2 mt-2"),
     cls <-- showContextMenu.signal.map(show => if show then "block" else "hidden"),
     idAttr("context-menu"),
@@ -133,7 +133,7 @@ object MainPage extends Component:
                     _.withCurrentValueOf(invStream)
                   } --> { case (e, inv) =>
                     investigationContext.set(Some(inv))
-                    val menuRef = contextMenu.ref
+                    val menuRef = investigationContextMenu.ref
                     showContextMenu.set(true)
                     menuRef.style.top = s"${e.pageY}px"
                     menuRef.style.left = s"${e.pageX}px"
@@ -141,9 +141,9 @@ object MainPage extends Component:
                 )
               }
             ),
-            contextMenu,
+            investigationContextMenu,
             documentEvents(_.onClick) --> { e =>
-              val menuRef = contextMenu.ref
+              val menuRef = investigationContextMenu.ref
               val target  = e.target
               if target.isInstanceOf[Element] && target.asInstanceOf[Element].ref.id == menuRef.id then
                 e.preventDefault()

@@ -23,6 +23,8 @@ trait ApiInvestigationService:
 
   def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel]
 
+  def deletePin(pinId: UUID, investigationId: UUID): ZIO[Any, Nothing, Unit]
+
   def delete(id: UUID): ZIO[Any, Nothing, Unit]
 
 class ApiInvestigationServiceLive(
@@ -71,6 +73,9 @@ class ApiInvestigationServiceLive(
 
   override def getPin(pinId: UUID): ZIO[Any, Nothing, PinModel] =
     investigationRepo.getPin(pinId).orDie.map(_.to[PinModel])
+
+  override def deletePin(pinId: UUID, investigationId: UUID): ZIO[Any, Nothing, Unit] =
+    investigationRepo.deletePin(pinId, investigationId).orDie
 
   override def delete(id: UUID): ZIO[Any, Nothing, Unit] = investigationRepo.delete(id).orDie
 

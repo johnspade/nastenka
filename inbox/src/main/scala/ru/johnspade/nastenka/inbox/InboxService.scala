@@ -37,7 +37,9 @@ final class InboxServiceLive(investigationRepo: InvestigationRepository, s3: S3,
       clock <- ZIO.clock
       now   <- clock.instant
       id    <- ZIO.attempt(UUID.randomUUID())
-      pin = newPin.into[Pin].transform(Field.const(_.createdAt, now), Field.const(_.id, id))
+      pin = newPin
+        .into[Pin]
+        .transform(Field.const(_.createdAt, now), Field.const(_.id, id), Field.const(_.deleted, false))
       _ <- investigationRepo.addPin(investigationId, pin)
     yield ()
 

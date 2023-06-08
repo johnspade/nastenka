@@ -31,6 +31,8 @@ trait ApiInvestigationRepository:
 
   def getPin(pinId: UUID): ZIO[Any, PinNotFound | SQLException, Pin]
 
+  def deletePin(pinId: UUID, investigationId: UUID): ZIO[Any, SQLException | Throwable, Unit]
+
   def delete(id: UUID): ZIO[Any, SQLException, Unit]
 
 class ApiInvestigationRepositoryLive(
@@ -60,7 +62,7 @@ class ApiInvestigationRepositoryLive(
         }
         .leftJoin(query[Pin])
         .on { case ((_, investigationPinOpt), pin) =>
-          investigationPinOpt.map(_.pinId).contains(pin.id)
+          investigationPinOpt.map(_.pinId).contains(pin.id) && !pin.deleted
         }
     )
       .map {
@@ -82,10 +84,22 @@ class ApiInvestigationRepositoryLive(
     investigationRepo.update(id, investigation)
 
   override def getPin(pinId: UUID): ZIO[Any, PinNotFound | SQLException, Pin] =
-    run(query[Pin].filter(_.id == lift(pinId)))
+    run(query[Pin].filter(p => p.id == lift(pinId) && !p.deleted))
       .map(_.headOption)
       .some
       .mapError(_.getOrElse(PinNotFound(pinId)))
+
+  override def deletePin(pinId: UUID, investigationId: UUID): ZIO[Any, SQLException | Throwable, Unit] =
+    val deletePinQuery = run(query[Pin].filter(_.id == lift(pinId)).update(_.deleted -> lift(true)))
+    val removePinFromOrder = run(
+      query[Investigation]
+        .filter(i => i.id == lift(investigationId))
+        .update(_.pinsOrder -> infix"array_remove(pins_order, ${lift(pinId)})::uuid[]".as[Seq[UUID]])
+    )
+
+    transaction {
+      deletePinQuery *> removePinFromOrder
+    }.unit
 
   override def delete(id: UUID): ZIO[Any, SQLException, Unit] = run(
     query[Investigation].filter(_.id == lift(id)).update(_.deleted -> lift(true))

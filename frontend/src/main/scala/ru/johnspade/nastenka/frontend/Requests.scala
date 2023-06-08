@@ -81,4 +81,7 @@ object Requests:
   def deleteInvestigation(investigationId: UUID): EventStream[Unit] =
     deleteRequest("investigations", investigationId)
 
+  def deletePin(pinId: UUID, investigationId: UUID): EventStream[Unit] =
+    deleteRequest("investigations", investigationId, "pins", pinId)
+
 end Requests

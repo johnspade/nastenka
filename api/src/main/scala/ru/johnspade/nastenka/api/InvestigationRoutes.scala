@@ -53,6 +53,11 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
 
     case Method.DELETE -> !! / Prefix / "investigations" / id =>
       toResponse(apiService.delete(UUID.fromString(id)))(_ => Response.status(Status.NoContent))
+
+    case Method.DELETE -> !! / Prefix / "investigations" / investigationId / "pins" / pinId =>
+      toResponse(apiService.deletePin(UUID.fromString(pinId), UUID.fromString(investigationId)))(_ =>
+        Response.status(Status.NoContent)
+      )
   }
 
 object InvestigationRoutes:

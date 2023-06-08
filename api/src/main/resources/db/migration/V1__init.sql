@@ -9,7 +9,8 @@ create table pins
     sender varchar(255),
     file_key uuid,
     html text,
-    images varchar(255)[] not null
+    images varchar(255)[] not null,
+    deleted boolean default false not null
 );
 
 create table investigations
