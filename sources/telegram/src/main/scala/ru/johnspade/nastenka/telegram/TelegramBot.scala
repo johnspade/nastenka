@@ -91,9 +91,9 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
 
       val (tagStart, tagEnd) = entity match {
         case _: MentionMessageEntity          => ("", "")
-        case _: CashtagMessageEntity          => ("$", "")
+        case _: CashtagMessageEntity          => ("", "")
         case _: CodeMessageEntity             => ("<code>", "</code>")
-        case _: BotCommandMessageEntity       => ("/", "")
+        case _: BotCommandMessageEntity       => ("", "")
         case _: CustomEmojiMessageEntity      => ("", "")
         case _: SpoilerMessageEntity          => ("<s>", "</s>")
         case _: EmailMessageEntity            => ("", "")
@@ -102,10 +102,10 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
         case _: ItalicMessageEntity           => ("<i>", "</i>")
         case _: StrikethroughMessageEntity    => ("<s>", "</s>")
         case _: UnderlineMessageEntity        => ("<u>", "</u>")
-        case _: HashtagMessageEntity          => ("#", "")
+        case _: HashtagMessageEntity          => ("", "")
         case _: TextMentionMessageEntity      => ("", "")
-        case TextLinkMessageEntity(_, _, url) => (s"""<a href="$url">""", "</a>")
-        case _: UrlMessageEntity              => (s"""<a href="$entityText">""", "</a>")
+        case TextLinkMessageEntity(_, _, url) => (s"""<a href="$url" target="_blank">""", "</a>")
+        case _: UrlMessageEntity              => (s"""<a href="$entityText" target="_blank">""", "</a>")
         case _: PhoneNumberMessageEntity      => ("", "")
       }
 
@@ -115,7 +115,7 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
 
     val formattedMessage = builder.toString.replace("\n", "<br>")
 
-    formattedMessage
+    s"""<div style="font-family: Segoe UI, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif; font-size: 1rem; line-height: 1.6;">$formattedMessage</div>"""
   }
 
   private def savePhotoIfPresent(message: Message) =
