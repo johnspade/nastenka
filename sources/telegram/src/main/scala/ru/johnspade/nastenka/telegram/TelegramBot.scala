@@ -79,15 +79,20 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
     })
       .getOrElse(ZIO.unit)
 
-  private def formatMessageWithEntities(message: String, entities: List[MessageEntity]): String = {
-    val builder = new StringBuilder(message)
+  import scala.collection.mutable
 
-    val sortedEntities = entities.sortBy(e => -e.offset)
+  private def formatMessageWithEntities(message: String, entities: List[MessageEntity]): String = {
+    val sortedEntities = entities.sortBy(e => (e.offset, -e.length))
+
+    val insertions = mutable.Map[Int, (List[String], List[String])]().withDefaultValue((List.empty, List.empty))
+
+    insertions(0) = (List.empty, List.empty)
+    insertions(message.length()) = (List.empty, List.empty)
 
     sortedEntities.foreach { entity =>
       val start      = entity.offset
       val end        = start + entity.length
-      val entityText = builder.substring(start, end)
+      val entityText = message.slice(start, end)
 
       val (tagStart, tagEnd) = entity match {
         case _: MentionMessageEntity          => ("", "")
@@ -109,11 +114,20 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
         case _: PhoneNumberMessageEntity      => ("", "")
       }
 
-      builder.insert(end, tagEnd)
-      builder.insert(start, tagStart)
+      insertions(start) = (tagStart :: insertions(start)._1, insertions(start)._2)
+      insertions(end) = (insertions(end)._1, tagEnd :: insertions(end)._2)
     }
 
-    val formattedMessage = builder.toString.replace("\n", "<br>")
+    val sliceAts = insertions.keys.toList.sorted
+    val textArr  = new mutable.ListBuffer[String]()
+    textArr += insertions(sliceAts.head)._2.reverse.mkString + insertions(sliceAts.head)._1.reverse.mkString
+    textArr ++= sliceAts.zip(sliceAts.tail).map { case (start, end) =>
+      val (startTags, endTags) = insertions(end)
+      val textSlice            = message.slice(start, end)
+      textSlice + endTags.reverse.mkString + startTags.reverse.mkString
+    }
+
+    val formattedMessage = textArr.mkString.replace("\n", "<br>")
 
     s"""<div style="font-family: Segoe UI, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif; font-size: 1rem; line-height: 1.6;">$formattedMessage</div>"""
   }
