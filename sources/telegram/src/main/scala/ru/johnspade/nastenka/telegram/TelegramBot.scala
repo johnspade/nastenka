@@ -57,6 +57,7 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
           forwardedMsg.forwardFrom
             .map(u => u.firstName + u.lastName.map(" " + _).getOrElse(""))
         }
+        .orElse(forwardedMsg.forwardFromChat.flatMap(_.title))
       text <- forwardedMsg.text.orElse(forwardedMsg.caption)
       messageEntities = forwardedMsg.text.map(_ => forwardedMsg.entities).getOrElse(forwardedMsg.captionEntities)
       html            = formatMessageWithEntities(text, messageEntities)
