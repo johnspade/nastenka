@@ -1,5 +1,7 @@
 # Nastenka
 
+>"Nástěnka" is a Czech word that translates to "bulletin board" or "noticeboard" in English.
+
 ## Selling pitch (by ChatGPT)
 
 >Are you tired of juggling multiple to-do lists, notes, and documents? Nastenka is here to help!

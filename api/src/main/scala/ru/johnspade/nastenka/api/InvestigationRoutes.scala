@@ -16,16 +16,16 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
   private val Prefix = "api"
 
   val routes: Http[Any, Throwable, Request, Response] = Http.collectZIO[Request] {
-    case Method.GET -> !! / Prefix / "investigations" =>
+    case Method.GET -> Root / Prefix / "investigations" =>
       toResponse(apiService.getAll)(investigations => Response.json(InvestigationsResponse(investigations).toJson))
 
-    case Method.GET -> !! / Prefix / "investigations" / id =>
+    case Method.GET -> Root / Prefix / "investigations" / id =>
       toResponse(
         apiService
           .getFull(UUID.fromString(id))
       )(investigation => Response.json(investigation.toJson))
 
-    case req @ Method.POST -> !! / Prefix / "investigations" =>
+    case req @ Method.POST -> Root / Prefix / "investigations" =>
       toResponse(for
         bodyAsString <- req.body.asString.orDie
         newInvestigation <- ZIO
@@ -35,7 +35,7 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
         investigation <- apiService.create(newInvestigation)
       yield investigation)(investigation => Response.json(investigation.toJson))
 
-    case req @ Method.PUT -> !! / Prefix / "investigations" / id =>
+    case req @ Method.PUT -> Root / Prefix / "investigations" / id =>
       toResponse(for
         bodyAsString <- req.body.asString.orDie
         investigation <- ZIO
@@ -45,16 +45,16 @@ class InvestigationRoutes(apiService: ApiInvestigationService):
         investigation <- apiService.save(UUID.fromString(id), investigation)
       yield investigation)(investigation => Response.json(investigation.toJson))
 
-    case Method.GET -> !! / Prefix / "investigations" / investigationId / "pins" / pinId =>
+    case Method.GET -> Root / Prefix / "investigations" / investigationId / "pins" / pinId =>
       toResponse(
         apiService
           .getPin(UUID.fromString(pinId))
       )(pin => Response.json(pin.toJson))
 
-    case Method.DELETE -> !! / Prefix / "investigations" / id =>
+    case Method.DELETE -> Root / Prefix / "investigations" / id =>
       toResponse(apiService.delete(UUID.fromString(id)))(_ => Response.status(Status.NoContent))
 
-    case Method.DELETE -> !! / Prefix / "investigations" / investigationId / "pins" / pinId =>
+    case Method.DELETE -> Root / Prefix / "investigations" / investigationId / "pins" / pinId =>
       toResponse(apiService.deletePin(UUID.fromString(pinId), UUID.fromString(investigationId)))(_ =>
         Response.status(Status.NoContent)
       )
