@@ -17,10 +17,11 @@
 ![](/images/screenshot1.png)
 ![](/images/screenshot2.png)
 
-- Import emails and Telegram messages (and other content in the future) by forwarding them to Nastenka.
+- Import emails and Telegram messages to Nastenka by forwarding them, with support for additional content types in the future.
+- Skip browser extensions or mobile apps, just forward messages to a Telegram bot or special email address.
 - Organize any Pins into Investigations, which are like boards or folders.
-- Prioritize Pins within Investigations by dragging and reordering them.
-- Work with your content privately: Nastenka is self-hosted, and you use your own email account and Telegram bot.
+- Move Pins around in Investigations to set their importance by dragging them.
+- Keep your content private by using Nastenka on your own server and connecting it with your own Telegram bot and email account.
 
 ## Setup
 
