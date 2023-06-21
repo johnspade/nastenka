@@ -2,7 +2,7 @@
 import { resolve } from 'path'
 import { createHtmlPlugin } from 'vite-plugin-html'
 
-const scalaVersion = '3.2.0'
+const scalaVersion = '3.3.0'
 
 // https://vitejs.dev/config/
 export default ({ mode }) => {
