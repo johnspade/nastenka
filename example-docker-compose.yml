@@ -1,0 +1,72 @@
+version: "3.9"
+services:
+  db:
+    container_name: db
+    image: postgres:14.5-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=nastenka
+    ports:
+      - ${DB_PORT:-5432}:5432
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - traefik
+  minio:
+    image: minio/minio:RELEASE.2023-05-27T05-56-19Z
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - traefik
+    volumes:
+      - minio:/data
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio1337
+    command: server --console-address ":9001" /data
+  server:
+    image: ghcr.io/johnspade/nastenka-backend:${NASTENKA_VERSION}
+    restart: always
+    depends_on: 
+      - db 
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/nastenka
+      - BOT_USER_ID
+      - BOT_TOKEN
+      - EMAIL_USER
+      - EMAIL_PASSWORD
+      - EMAIL_FOLDER
+      - EMAIL_NASTENKA_ALIAS
+      - EMAIL_URL
+      - S3_ENDPOINT_URL
+      - S3_BUCKET_NAME
+      - AWS_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - PORT
+      - S3_PUBLIC_BUCKET_URL
+    labels:
+      - "traefik.http.routers.nastenka-server.entrypoints=ep1"
+      - "traefik.http.routers.nastenka-server.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.nastenka-server.service=nastenka-server"
+      - "traefik.http.services.nastenka-server.loadbalancer.server.port=8080"
+    networks:
+      - traefik
+  frontend:
+    image: ghcr.io/johnspade/nastenka-frontend:${NASTENKA_VERSION}
+    labels:
+      - "traefik.http.routers.nastenka-frontend.entrypoints=ep1"
+      - "traefik.http.routers.nastenka-frontend.rule=PathPrefix(`/app`)"
+      - "traefik.http.routers.nastenka-frontend.service=nastenka-frontend"
+      - "traefik.http.services.nastenka-frontend.loadbalancer.server.port=80"
+    networks:
+      - traefik
+networks:
+  traefik:
+    external: true  
+volumes:
+  db_data:
+  minio: {}

@@ -1,6 +1,6 @@
 # Nastenka
 
-Here is what ChatGPT has to say about Nastenka:
+## Selling pitch (by ChatGPT)
 
 >Are you tired of juggling multiple to-do lists, notes, and documents? Nastenka is here to help!
 >
@@ -12,7 +12,24 @@ Here is what ChatGPT has to say about Nastenka:
 >
 >So why wait? Get organized and simplify your life with Nastenka today!
 
+## Current features
+
+![](/images/screenshot1.png)
+![](/images/screenshot2.png)
+
+- Import emails and Telegram messages (and other content in the future) by forwarding them to Nastenka.
+- Organize any Pins into Investigations, which are like boards or folders.
+- Prioritize Pins within Investigations by dragging and reordering them.
+- Work with your content privately: Nastenka is self-hosted, and you use your own email account and Telegram bot.
+
 ## Setup
+
+- Create a new Telegram bot by messaging [@BotFather](https://t.me/BotFather) on Telegram.
+- Create a new email account or alias that you will use to forward emails to Nastenka. Your email provider must support [plus addressing](https://www.fastmail.help/hc/en-us/articles/360060591053-Plus-addressing-and-subdomain-addressing).
+- Create a new folder in your email account for Nastenka, and set up rules for automatically moving relevant emails into it. Nastenka uses separate email addresses for each Investigation and they are all in the format `alias+UUID@example.com` where `UUID` is the ID of the Investigation.
+- Setup Nastenka on your server using Docker Compose. See the [example docker-compose.yml](/example-docker-compose.yml) for an example configuration. You will need to set up a Postgresql database, a Minio S3-compatible object storage service, and a reverse proxy (e.g. Caddy or Traefik) to handle routing to the frontend and backend servers.
+- Create a new bucket in Minio for Nastenka, and set up a policy to allow public access to the bucket.
+- Provide the necessary environment variables to the backend server.
 
 **Environment variables:**
 
@@ -21,7 +38,7 @@ Here is what ChatGPT has to say about Nastenka:
 - `BOT_USER_ID` - Your Telegram user ID.
 - `BOT_TOKEN` - The token for your personal Telegram bot.
 - `EMAIL_USER` - The username associated with your email account.
-- `EMAIL_PASSWORD` - The password (or application-specific password) associated with your email account.
+- `EMAIL_PASSWORD` - The password (or application password) associated with your email account.
 - `EMAIL_FOLDER=Nastenka` - Name of the folder in your email account where you should move emails from Nastenka. You should create this folder and set up rules for automatically moving relevant emails into it.
 - `EMAIL_NASTENKA_ALIAS=nastenka@example.com` - The email address or alias that you will use to forward emails to Nastenka.
 - `EMAIL_URL=imap://imap.fastmail.com:993` - The IMAP URL for accessing your email account.
