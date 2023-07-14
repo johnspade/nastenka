@@ -5,6 +5,7 @@ create table pins
     created_at timestamp not null,
     pin_type varchar(255) not null,
     title varchar(255),
+    url text,
     text text,
     sender varchar(255),
     file_key uuid,

@@ -10,6 +10,7 @@ final case class Pin(
     createdAt: Instant,
     pinType: String,
     title: Option[String],
+    url: Option[String],
     text: Option[String],
     sender: Option[String],
     html: Option[String],
@@ -23,6 +24,7 @@ object Pin:
 final case class NewPin(
     pinType: String,
     title: Option[String] = None,
+    url: Option[String] = None,
     text: Option[String] = None,
     sender: Option[String] = None,
     html: Option[String] = None,

@@ -114,6 +114,14 @@ final class InvestigationView(investigationPage: Signal[Page.InvestigationPage])
                 )
               ),
               renderContent(pin),
+              div(pin.url.map { link =>
+                a(
+                  href(link),
+                  target("_blank"),
+                  cls("text-blue-500 text-xl"),
+                  link
+                )
+              }),
               div(
                 pin.images.map { link =>
                   img(

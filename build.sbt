@@ -93,7 +93,8 @@ lazy val telegram = project
       telegramiumCore,
       telegramiumHigh,
       zioInteropCats,
-      sttpClientZio
+      sttpClientZio,
+      jsoup
     )
   )
 

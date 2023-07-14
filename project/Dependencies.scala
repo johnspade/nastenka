@@ -41,6 +41,7 @@ object Dependencies {
   val emilCommon      = "com.github.eikek"              %% "emil-common"      % V.emil
   val emilJavamail    = "com.github.eikek"              %% "emil-javamail"    % V.emil
   val sttpClientZio   = "com.softwaremill.sttp.client3" %% "zio"              % V.sttpClient
+  val jsoup           = "org.jsoup"                      % "jsoup"            % "1.16.1"
 
   val zioTest    = "dev.zio" %% "zio-test"     % V.zio % Test
   val zioTestSbt = "dev.zio" %% "zio-test-sbt" % V.zio % Test

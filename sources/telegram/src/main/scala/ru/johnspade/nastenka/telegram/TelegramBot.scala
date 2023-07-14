@@ -26,38 +26,68 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
 ) extends LongPollBot[Task](api):
 
   override def onMessage(msg: Message): Task[Unit] =
-    if msg.forwardDate.isDefined && msg.from.exists(_.id == botConfig.userId) then
-      inboxService.getInvestigations
-        .flatMap { investigations =>
-          sendMessage(
-            ChatIntId(msg.chat.id),
-            "Select an investigation",
-            replyToMessageId = msg.messageId.some,
-            replyMarkup = InlineKeyboardMarkups
-              .singleColumn(
-                investigations
-                  .take(10)
-                  .map(investigation =>
-                    InlineKeyboardButtons.callbackData(investigation.title, investigation.id.toString())
-                  )
-              )
-              .some
-          ).exec.unit
-        }
-    else ZIO.unit
+    ZIO
+      .when(msg.from.exists(_.id == botConfig.userId)) {
+        if msg.forwardDate.isDefined then sendInvestigationList(msg.chat.id, msg.messageId)
+        else if msg.text.isDefined then
+          val TextLength = msg.text.fold(0)(_.length)
+          msg.entities match
+            case List(UrlMessageEntity(0, TextLength)) =>
+              sendInvestigationList(msg.chat.id, msg.messageId)
+            case _ => ZIO.unit
+        else ZIO.unit
+      }
+      .map(_.getOrElse(()))
 
   override def onCallbackQuery(query: CallbackQuery): Task[Unit] =
+    ZIO
+      .when(query.from.id == botConfig.userId) {
+        (for
+          callbackData <- query.data
+          investigationId = UUID.fromString(callbackData)
+          msg         <- query.message
+          originalMsg <- msg.replyToMessage
+        yield {
+          for
+            _ <-
+              if originalMsg.forwardDate.isDefined then saveForwardedMessage(originalMsg, investigationId)
+              else if originalMsg.text.exists(_.startsWith("http")) then saveUrlMessage(originalMsg, investigationId)
+              else ZIO.unit
+            _ <- answerCallbackQuery(query.id).exec
+            _ <- sendMessage(ChatIntId(msg.chat.id), "Added a new pin").exec
+          yield ()
+        })
+          .getOrElse(ZIO.unit)
+      }
+      .map(_.getOrElse(()))
+
+  private def sendInvestigationList(chatId: Long, messageId: Int) =
+    inboxService.getInvestigations
+      .flatMap { investigations =>
+        sendMessage(
+          ChatIntId(chatId),
+          "Select an investigation",
+          replyToMessageId = messageId.some,
+          replyMarkup = InlineKeyboardMarkups
+            .singleColumn(
+              investigations
+                .take(10)
+                .map(investigation =>
+                  InlineKeyboardButtons.callbackData(investigation.title, investigation.id.toString())
+                )
+            )
+            .some
+        ).exec.unit
+      }
+
+  private def saveForwardedMessage(forwardedMsg: Message, investigationId: UUID) =
+    val senderName = forwardedMsg.forwardSenderName
+      .orElse {
+        forwardedMsg.forwardFrom
+          .map(u => u.firstName + u.lastName.map(" " + _).getOrElse(""))
+      }
+      .orElse(forwardedMsg.forwardFromChat.flatMap(_.title))
     (for
-      callbackData <- query.data if query.from.id == botConfig.userId
-      investigationId = UUID.fromString(callbackData)
-      msg          <- query.message
-      forwardedMsg <- msg.replyToMessage
-      senderName = forwardedMsg.forwardSenderName
-        .orElse {
-          forwardedMsg.forwardFrom
-            .map(u => u.firstName + u.lastName.map(" " + _).getOrElse(""))
-        }
-        .orElse(forwardedMsg.forwardFromChat.flatMap(_.title))
       text <- forwardedMsg.text.orElse(forwardedMsg.caption)
       messageEntities = forwardedMsg.text.map(_ => forwardedMsg.entities).getOrElse(forwardedMsg.captionEntities)
       html            = formatMessageWithEntities(text, messageEntities)
@@ -74,11 +104,25 @@ final class TelegramBot(botConfig: BotConfig, inboxService: InboxService, sttpCl
             images = savedPhotoOpt.toList
           )
         )
-        _ <- answerCallbackQuery(query.id).exec
-        _ <- sendMessage(ChatIntId(msg.chat.id), "Added a new pin").exec
       yield ()
-    })
-      .getOrElse(ZIO.unit)
+    }).getOrElse(ZIO.unit)
+
+  private def saveUrlMessage(msg: Message, investigationId: UUID) =
+    for
+      title <- ZIO.foreach(msg.text) { url =>
+        ZIO.attemptBlocking {
+          org.jsoup.Jsoup.connect(url).get().title()
+        }
+      }
+      _ <- inboxService.addPin(
+        investigationId,
+        NewPin(
+          PinType.Bookmark,
+          title = title,
+          url = msg.text
+        )
+      )
+    yield ()
 
   import scala.collection.mutable
 

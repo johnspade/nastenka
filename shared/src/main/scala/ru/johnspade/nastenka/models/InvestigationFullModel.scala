@@ -19,6 +19,7 @@ final case class PinModel(
     id: UUID,
     pinType: String,
     title: Option[String],
+    url: Option[String],
     text: Option[String],
     sender: Option[String],
     html: Option[String],
